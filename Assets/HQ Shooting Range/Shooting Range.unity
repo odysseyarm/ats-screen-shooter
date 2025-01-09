@@ -2312,8 +2312,10 @@ GameObject:
   m_Component:
   - component: {fileID: 579598153}
   - component: {fileID: 579598152}
+  - component: {fileID: 579598155}
+  - component: {fileID: 579598154}
   m_Layer: 0
-  m_Name: OdysseyHubClient
+  m_Name: ScreenShootingSystem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2346,6 +2348,40 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &579598154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 579598151}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd662f04cffa2334895e3f834a223e17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reset: {fileID: -7036229988856527556, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
+  zero: {fileID: 1234631501306060277, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
+  togglech: {fileID: -534828164913635888, guid: 1ffbebe7510d0a34e929befa398e7afe,
+    type: 3}
+  sw1: {fileID: 4077480415927286289, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
+  sw2: {fileID: -302977040593671772, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
+  sw3: {fileID: -7051461601803150188, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
+  crosshairTexture: {fileID: 2800000, guid: 7d8ef92813857224d8ae253d16f05e8b, type: 3}
+--- !u!114 &579598155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 579598151}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74aa0d10c3cb31d45aff5d71dd37355a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BulletHole: {fileID: 7131599946432850693, guid: 4e9e7a37cae54fa42955e9b83b05e39e,
+    type: 3}
 --- !u!1 &584370441
 GameObject:
   m_ObjectHideFlags: 0
@@ -7325,73 +7361,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!1 &1777177595
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1777177596}
-  - component: {fileID: 1777177597}
-  - component: {fileID: 1777177598}
-  m_Layer: 0
-  m_Name: ScreenShootingSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1777177596
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1777177595}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.54, z: -10.573248}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1777177597
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1777177595}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd662f04cffa2334895e3f834a223e17, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  reset: {fileID: 3492371889753802669, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
-  zero: {fileID: 1234631501306060277, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
-  togglech: {fileID: -534828164913635888, guid: 1ffbebe7510d0a34e929befa398e7afe,
-    type: 3}
-  sw1: {fileID: 4077480415927286289, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
-  sw2: {fileID: -302977040593671772, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
-  sw3: {fileID: -7051461601803150188, guid: 1ffbebe7510d0a34e929befa398e7afe, type: 3}
-  crosshairTexture: {fileID: 2800000, guid: 7d8ef92813857224d8ae253d16f05e8b, type: 3}
---- !u!114 &1777177598
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1777177595}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 74aa0d10c3cb31d45aff5d71dd37355a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  BulletHole: {fileID: 7131599946432850693, guid: 4e9e7a37cae54fa42955e9b83b05e39e,
-    type: 3}
 --- !u!1001 &1788861754
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9081,6 +9050,5 @@ SceneRoots:
   - {fileID: 1727059410}
   - {fileID: 298322774}
   - {fileID: 2017235415}
-  - {fileID: 1777177596}
   - {fileID: 1115834530}
   - {fileID: 579598153}

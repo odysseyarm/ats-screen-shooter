@@ -84,7 +84,8 @@ public class InputHandlers : MonoBehaviour
 
     private void PerformZero(InputAction.CallbackContext obj)
     {
-        offset[weaponIndex] = new Vector2(0.5f, 0.5f) - point;
+        // offset[weaponIndex] = new Vector2(0.5f, 0.5f) - point;
+        // todo hub has the zero function now
     }
 
     // Start is called before the first frame update

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 67fe644e46e839047883d3f4b6c7de9b
+guid: acbf2bc6b0017e5428b244bbbc6e9e33
 labels:
 - NuGetForUnity
 PluginImporter:
@@ -19,6 +19,7 @@ PluginImporter:
         'Exclude ': 1
         Exclude Android: 1
         Exclude CloudRendering: 1
+        Exclude Editor: 1
         Exclude EmbeddedLinux: 1
         Exclude GameCoreScarlett: 1
         Exclude GameCoreXboxOne: 1
@@ -31,29 +32,38 @@ PluginImporter:
         Exclude Switch: 1
         Exclude VisionOS: 1
         Exclude WebGL: 1
-        Exclude Win: 1
+        Exclude Win: 0
+        Exclude Win64: 1
         Exclude WindowsStoreApps: 1
         Exclude XboxOne: 1
         Exclude iOS: 1
         Exclude tvOS: 1
     Editor:
-      enabled: 1
+      enabled: 0
       settings:
-        CPU: x86_64
+        CPU: AnyCPU
         DefaultValueInitialized: true
         OS: Windows
-    Win:
+    Linux64:
+      enabled: 0
+      settings:
+        CPU: x86_64
+    OSXUniversal:
       enabled: 0
       settings:
         CPU: None
-    Win64:
+    Win:
       enabled: 1
       settings:
-        CPU: x86_64
+        CPU: AnyCPU
+    Win64:
+      enabled: 0
+      settings:
+        CPU: None
     WindowsStoreApps:
       enabled: 0
       settings:
-        CPU: x64
+        CPU: x86
   userData: 
   assetBundleName: 
   assetBundleVariant: 
