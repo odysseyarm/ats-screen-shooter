@@ -10,11 +10,13 @@ public class OdysseyHubClient : MonoBehaviour
 
     private CancellationTokenSource cancellationTokenSource = new();
 
+    public Radiosity.OdysseyHubClient.Handle handle = new();
+    public Radiosity.OdysseyHubClient.Client client = new();
+
+    private bool _isConnected = false;
+
     private async void Start() {
         inputHandlers = GetComponent<InputHandlers>();
-
-        Radiosity.OdysseyHubClient.Handle handle = new();
-        Radiosity.OdysseyHubClient.Client client = new();
 
         Radiosity.OdysseyHubClient.ClientError clientError;
 
@@ -22,6 +24,8 @@ public class OdysseyHubClient : MonoBehaviour
             Debug.Log($"Error connecting to Odyssey Hub: {clientError}. Trying again in 1 second.");
             await Awaitable.WaitForSecondsAsync(1, cancellationTokenSource.Token);
         }
+
+        _isConnected = true;
 
         Debug.Log("Connected to Odyssey Hub. Starting event stream");
 
@@ -34,14 +38,21 @@ public class OdysseyHubClient : MonoBehaviour
                     case Radiosity.OdysseyHubClient.DeviceEvent deviceEvent:
                         switch (deviceEvent.kind) {
                             case Radiosity.OdysseyHubClient.DeviceEvent.Tracking tracking:
-                                inputHandlers.PerformPoint(new Vector2(tracking.aimpoint.x, tracking.aimpoint.y));
+                                inputHandlers.PerformPoint(deviceEvent.device, new Vector2(tracking.aimpoint.x, tracking.aimpoint.y));
                                 break;
                             case Radiosity.OdysseyHubClient.DeviceEvent.Impact impact:
-                                inputHandlers.PerformShoot();
+                                inputHandlers.PerformShoot(deviceEvent.device);
                                 break;
                             case Radiosity.OdysseyHubClient.DeviceEvent.Connect _:
                                 break;
                             case Radiosity.OdysseyHubClient.DeviceEvent.Disconnect _:
+                                break;
+                            case Radiosity.OdysseyHubClient.DeviceEvent.ZeroResult zeroResult:
+                                if (zeroResult.success) {
+                                    Debug.Log("Zero successful");
+                                } else {
+                                    Debug.Log($"Zero failed. Try again");
+                                }
                                 break;
                             default:
                                 break;
@@ -50,6 +61,10 @@ public class OdysseyHubClient : MonoBehaviour
                 }
             }
         } catch (System.OperationCanceledException) { }
+    }
+
+    public bool isConnected() {
+        return _isConnected;
     }
 
     private void OnDestroy() {

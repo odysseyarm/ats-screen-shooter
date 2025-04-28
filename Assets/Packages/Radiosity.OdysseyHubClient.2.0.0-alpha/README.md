@@ -1,1 +1,0 @@
-C# wrapper library over native Odyssey client library

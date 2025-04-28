@@ -15,6 +15,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "ResetZero",
+                    "type": "Button",
+                    "id": "265f6045-cf3c-4744-ba91-270ace738d20",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Zero",
                     "type": "Button",
                     "id": "249dff99-2e19-4e0b-b815-c3d246329658",
@@ -24,36 +33,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Switch to Weapon 1",
-                    "type": "Button",
-                    "id": "e145431f-df67-4548-8664-8dd327697f30",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Switch to Weapon 2",
-                    "type": "Button",
-                    "id": "3389528d-3618-4d75-9e76-1712c731bf81",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Switch to Weapon 3",
-                    "type": "Button",
-                    "id": "b329a9c9-069e-4624-840d-071d1de6dae7",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Toggle Crosshair",
                     "type": "Button",
                     "id": "05d5ebeb-1ef2-4b0d-a1d7-114e7b40cc19",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Toggle Spotlight",
+                    "type": "Button",
+                    "id": "57d3f23b-67d3-4ec3-9970-9670ba1f9c8a",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -85,67 +76,12 @@
                 },
                 {
                     "name": "",
-                    "id": "0fd5aba8-566f-4c63-82c7-cec3f7cad55b",
+                    "id": "2761285b-468a-4328-8f5a-a281fd9ced5e",
                     "path": "<Keyboard>/#(4)",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Switch to Weapon 1",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "3a696dd2-a026-4f11-8dcb-2af7ba828f43",
-                    "path": "<Keyboard>/#(J)",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Switch to Weapon 1",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "2a95da2e-c94a-40a4-9e89-566099bec70e",
-                    "path": "<Keyboard>/#(5)",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Switch to Weapon 2",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "9d532232-8127-447e-8a4b-590a7111d8ef",
-                    "path": "<Keyboard>/#(K)",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Switch to Weapon 2",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "9056cfe4-5d63-4409-89ec-d26197fcc973",
-                    "path": "<Keyboard>/#(6)",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Switch to Weapon 3",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "2d27982c-8013-495b-9285-b88f3ad12fc2",
-                    "path": "<Keyboard>/#(L)",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Switch to Weapon 3",
+                    "action": "Toggle Crosshair",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -162,23 +98,34 @@
                 },
                 {
                     "name": "",
-                    "id": "9c2a3ba2-0c05-4f08-bd64-7aabf7d5d16c",
-                    "path": "<Keyboard>/space",
+                    "id": "1b65b578-a5b3-435b-ac11-f88ad6846736",
+                    "path": "<Keyboard>/#(1)",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Toggle Crosshair",
+                    "action": "Reset",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "1b65b578-a5b3-435b-ac11-f88ad6846736",
-                    "path": "<Keyboard>/\"2\"",
+                    "id": "236e9bf2-cb34-4007-a50d-ecce512b2654",
+                    "path": "<Keyboard>/#(2)",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Reset",
+                    "action": "ResetZero",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c658543d-a4f1-4fea-9c40-25c3ba474030",
+                    "path": "<Keyboard>/#(5)",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Spotlight",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

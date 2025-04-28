@@ -5,9 +5,9 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/OutdoorsScene.unity
-    guid: 8124e5870f4fd4c779e7a5f994e84ad1
+  - enabled: 1
+    path: Assets/HQ Shooting Range/Shooting Range.unity
+    guid: 15a2bd2161018674b83ad33ae483c257
   m_configObjects:
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 1cc2e1dc3d636c64d9b737cc99fb10a1,
       type: 2}
@@ -15,3 +15,4 @@ EditorBuildSettings:
       guid: f16a907bd6d11ab47a44feda8c8366a2, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 75410396c2f5e834d827ad54c1780968,
       type: 2}
+  m_UseUCBPForAssetBundles: 0
