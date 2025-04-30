@@ -11,7 +11,10 @@ using UnityEngine.InputSystem.Processors;
 public class InputHandlers : MonoBehaviour
 {
     [SerializeField]
-    private InputActionReference reset, resetzero, zero, togglech;
+    private Camera player_camera;
+
+    [SerializeField]
+    private InputActionReference reset, resetzero, zero, togglech, zerocamtranslation;
 
     [SerializeField]
     private Texture[] crosshairTextures;
@@ -20,6 +23,8 @@ public class InputHandlers : MonoBehaviour
     private ScreenShooter screenShooter;
 
     private bool showCrosshair = true;
+
+    private static readonly byte[] HELMET_DEVICE_UUID = new byte[] { 0x01, 0x34, 0x38, 0x34, 0x34, 0x98 };
 
     private class Player {
         public Radiosity.OdysseyHubClient.IDevice device;
@@ -48,7 +53,7 @@ public class InputHandlers : MonoBehaviour
         showCrosshair = !showCrosshair;
     }
 
-    public void PerformPoint(Radiosity.OdysseyHubClient.IDevice device, Vector2 point)
+    public void PerformTransformAndPoint(Radiosity.OdysseyHubClient.IDevice device, PoseUtils.UnityPose pose, Vector2 point)
     {
         Player player = players.Find(p => p.device.Equals(device));
         if (player == null) {
@@ -57,6 +62,10 @@ public class InputHandlers : MonoBehaviour
             players.Allocate(player);
         }
         player.point = point;
+        if (player.device.UUID.SequenceEqual(HELMET_DEVICE_UUID)) {
+            player_camera.transform.position = pose.position;
+            player_camera.transform.rotation = pose.rotation;
+        }
     }
 
     public void PerformShoot(Radiosity.OdysseyHubClient.IDevice device)

@@ -38,7 +38,8 @@ public class OdysseyHubClient : MonoBehaviour
                     case Radiosity.OdysseyHubClient.DeviceEvent deviceEvent:
                         switch (deviceEvent.kind) {
                             case Radiosity.OdysseyHubClient.DeviceEvent.Tracking tracking:
-                                inputHandlers.PerformPoint(deviceEvent.device, new Vector2(tracking.aimpoint.x, tracking.aimpoint.y));
+                                var unityPose = PoseUtils.ConvertOdyPoseToUnity(tracking.pose);
+                                inputHandlers.PerformTransformAndPoint(deviceEvent.device, unityPose, new Vector2(tracking.aimpoint.x, tracking.aimpoint.y));
                                 break;
                             case Radiosity.OdysseyHubClient.DeviceEvent.Impact impact:
                                 inputHandlers.PerformShoot(deviceEvent.device);
