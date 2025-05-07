@@ -1,3 +1,4 @@
+using Apt.Unity.Projection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,10 +9,10 @@ using UnityEngine.InputSystem.Processors;
 
 [RequireComponent(typeof(ScreenShooter))]
 [RequireComponent(typeof(InputHandlers))]
-public class InputHandlers : MonoBehaviour
+public class InputHandlers : TrackerBase
 {
     [SerializeField]
-    private Camera player_camera;
+    private ProjectionPlane projectionPlane;
 
     [SerializeField]
     private InputActionReference reset, resetzero, zero, togglech, zerocamtranslation;
@@ -24,7 +25,12 @@ public class InputHandlers : MonoBehaviour
 
     private bool showCrosshair = true;
 
-    private static readonly byte[] HELMET_DEVICE_UUID = new byte[] { 0x01, 0x34, 0x38, 0x34, 0x34, 0x98 };
+    private Vector3 zero_translation = Vector3.zero;
+
+    private float distance_offset = 2.0f; // User's starting distance from screen
+
+    private static readonly byte[] HELMET_DEVICE_UUID = new byte[] { 0x03, 0xaf, 0xa3, 0x6d, 0x42, 0xc4 };
+    public AppConfig appConfig = new AppConfig();
 
     private class Player {
         public Radiosity.OdysseyHubClient.IDevice device;
@@ -63,8 +69,8 @@ public class InputHandlers : MonoBehaviour
         }
         player.point = point;
         if (player.device.UUID.SequenceEqual(HELMET_DEVICE_UUID)) {
-            player_camera.transform.position = pose.position;
-            player_camera.transform.rotation = pose.rotation;
+            IsTracking = true;
+            translation = zero_translation + pose.position;
         }
     }
 
@@ -107,11 +113,34 @@ public class InputHandlers : MonoBehaviour
         }
     }
 
+    public void HandleScreenZeroInfo(Radiosity.OdysseyHubClient.ScreenInfo screenInfo) {
+        // Convert Odyssey coordinate to Unity: center-origin and y-down
+        Vector2 f(Radiosity.OdysseyHubClient.Vector2 vec) {
+            float centerX = (screenInfo.tr.x + screenInfo.tl.x) * 0.5f;
+            float centerY = (screenInfo.tl.y + screenInfo.bl.y) * 0.5f;
+            float unityX = vec.x - centerX;
+            float unityY = -(vec.y - centerY);
+            return new Vector2(unityX, unityY);
+        }
+
+        Vector2 tl = f(screenInfo.tl);
+        Vector2 tr = f(screenInfo.tr);
+        Vector2 bl = f(screenInfo.bl);
+        Vector2 br = f(screenInfo.br);
+
+        projectionPlane.SetLocalBounds(tl, tr, bl, br);
+
+        // Set the offset of the Odyssey (0,0) — camera origin — in Unity space
+        zero_translation = f(new Radiosity.OdysseyHubClient.Vector2(0f, 0f));
+        zero_translation.z = distance_offset;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         client = GetComponent<OdysseyHubClient>();
         screenShooter = GetComponent<ScreenShooter>();
+        appConfig.Load();
     }
 
     // Update is called once per frame

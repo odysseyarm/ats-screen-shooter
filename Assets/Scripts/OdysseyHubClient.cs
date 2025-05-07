@@ -27,7 +27,12 @@ public class OdysseyHubClient : MonoBehaviour
 
         _isConnected = true;
 
-        Debug.Log("Connected to Odyssey Hub. Starting event stream");
+        Debug.Log("Connected to Odyssey Hub");
+
+        {
+            var (err, err_msg, screen_info) = await client.GetScreenInfoById(handle, 0);
+            inputHandlers.HandleScreenZeroInfo(screen_info);
+        }
 
         Channel<(Radiosity.OdysseyHubClient.IEvent, Radiosity.OdysseyHubClient.ClientError, string)> eventChannel = Channel.CreateUnbounded<(Radiosity.OdysseyHubClient.IEvent, Radiosity.OdysseyHubClient.ClientError, string)>();
         client.StartStream(handle, eventChannel.Writer);
