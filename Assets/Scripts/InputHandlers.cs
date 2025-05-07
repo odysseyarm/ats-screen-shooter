@@ -27,7 +27,7 @@ public class InputHandlers : TrackerBase
 
     private Vector3 zero_translation = Vector3.zero;
 
-    private float distance_offset = 2.0f; // User's starting distance from screen
+    private float distance_offset = 1.0f; // todo this is the camera's initial local position, maybe retrieve it instead of relying on it to not be changed
 
     private static readonly byte[] HELMET_DEVICE_UUID = new byte[] { 0x03, 0xaf, 0xa3, 0x6d, 0x42, 0xc4 };
     public AppConfig appConfig = new AppConfig();
