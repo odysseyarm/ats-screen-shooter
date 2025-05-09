@@ -6,7 +6,35 @@ using UnityEngine;
 [Serializable]
 public class ConfigData
 {
-    public List<string> uuids = new();
+    [NonSerialized]
+    public List<byte[]> helmet_uuids = new();
+
+    // Serializable proxy for `helmet_uuids`
+    [SerializeField]
+    private List<string> helmet_hex_uuids = new();
+
+    public void FromBytes()
+    {
+        helmet_uuids.Clear();
+        foreach (string hex in helmet_hex_uuids)
+        {
+            byte[] bytes = new byte[6];
+            for (int i = 0; i < 6; i++)
+                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            helmet_uuids.Add(bytes);
+        }
+    }
+
+    public void ToHex()
+    {
+        helmet_hex_uuids.Clear();
+        foreach (var bytes in helmet_uuids)
+        {
+            if (bytes.Length != 6)
+                throw new InvalidOperationException("UUID must be 6 bytes.");
+            helmet_hex_uuids.Add(BitConverter.ToString(bytes).Replace("-", "").ToLower());
+        }
+    }
 }
 
 public class AppConfig
@@ -21,42 +49,18 @@ public class AppConfig
         {
             string json = File.ReadAllText(ConfigPath);
             Data = JsonUtility.FromJson<ConfigData>(json);
+            Data.FromBytes();
         }
         else
         {
-            Data = new ConfigData(); // start with empty config
+            Data = new ConfigData();
         }
     }
 
     public void Save()
     {
+        Data.ToHex();
         string json = JsonUtility.ToJson(Data, prettyPrint: true);
         File.WriteAllText(ConfigPath, json);
-    }
-
-    public void AddUUID(byte[] uuid6)
-    {
-        if (uuid6.Length != 6)
-            throw new ArgumentException("UUID must be 6 bytes.");
-
-        string hex = BitConverter.ToString(uuid6).Replace("-", "").ToLowerInvariant();
-        if (!Data.uuids.Contains(hex))
-        {
-            Data.uuids.Add(hex);
-            Save();
-        }
-    }
-
-    public List<byte[]> GetUUIDs()
-    {
-        List<byte[]> result = new();
-        foreach (string hex in Data.uuids)
-        {
-            byte[] bytes = new byte[6];
-            for (int i = 0; i < 6; i++)
-                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-            result.Add(bytes);
-        }
-        return result;
     }
 }

@@ -29,7 +29,6 @@ public class InputHandlers : TrackerBase
 
     private float distance_offset = 1.0f; // todo this is the camera's initial local position, maybe retrieve it instead of relying on it to not be changed
 
-    private static readonly byte[] HELMET_DEVICE_UUID = new byte[] { 0x03, 0xaf, 0xa3, 0x6d, 0x42, 0xc4 };
     public AppConfig appConfig = new AppConfig();
 
     private class Player {
@@ -68,7 +67,9 @@ public class InputHandlers : TrackerBase
             players.Allocate(player);
         }
         player.point = point;
-        if (player.device.UUID.SequenceEqual(HELMET_DEVICE_UUID)) {
+
+        if (appConfig.Data.helmet_uuids.Any(uuid => player.device.UUID.SequenceEqual(uuid)))
+        {
             IsTracking = true;
             translation = zero_translation + pose.position;
         }
@@ -93,24 +94,24 @@ public class InputHandlers : TrackerBase
 
     private void PerformResetZero(InputAction.CallbackContext obj)
     {
-        if (client.isConnected()) {
-            foreach (var (_, player) in players) {
-                if (player.device != null) {
-                    client.client.ResetZero(client.handle, player.device);
-                }
-            }
-        }
+        // if (client.isConnected()) {
+        //     foreach (var (_, player) in players) {
+        //         if (player.device != null) {
+        //             client.client.ResetZero(client.handle, player.device);
+        //         }
+        //     }
+        // }
     }
 
     private void PerformZero(InputAction.CallbackContext obj)
     {
-        if (client.isConnected()) {
-            foreach (var (_, player) in players) {
-                if (player.device != null) {
-                    client.client.Zero(client.handle, player.device, new Radiosity.OdysseyHubClient.Vector3(0, -0.0635f, 0), new Radiosity.OdysseyHubClient.Vector2(0.5f, 0.5f));
-                }
-            }
-        }
+        // if (client.isConnected()) {
+        //     foreach (var (_, player) in players) {
+        //         if (player.device != null) {
+        //             client.client.Zero(client.handle, player.device, new Radiosity.OdysseyHubClient.Vector3(0, -0.0635f, 0), new Radiosity.OdysseyHubClient.Vector2(0.5f, 0.5f));
+        //         }
+        //     }
+        // }
     }
 
     public void HandleScreenZeroInfo(Radiosity.OdysseyHubClient.ScreenInfo screenInfo) {
@@ -156,7 +157,7 @@ public class InputHandlers : TrackerBase
                 var texture = crosshairTextures[i];
                 Vector2 screenPointNormal = player.point;
                 Vector2 screenPoint = new Vector2(screenPointNormal.x * Screen.width, Screen.height - screenPointNormal.y * Screen.height);
-                GUI.DrawTexture(new Rect(screenPoint.x - 16 / 2, Screen.height - screenPoint.y - 16 / 2, 16, 16), texture, ScaleMode.StretchToFill, true, 0);
+                GUI.DrawTexture(new Rect(screenPoint.x - 52 / 2, Screen.height - screenPoint.y - 52 / 2, 52, 52), texture, ScaleMode.StretchToFill, true, 0);
             }
             GUI.EndGroup();
         }
