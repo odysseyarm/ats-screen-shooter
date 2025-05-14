@@ -15,7 +15,7 @@ public class InputHandlers : TrackerBase
     private ProjectionPlane projectionPlane;
 
     [SerializeField]
-    private InputActionReference reset, resetzero, zero, togglech, zerocamtranslation;
+    private InputActionReference reset, togglech;
 
     [SerializeField]
     private Texture[] crosshairTextures;
@@ -31,9 +31,14 @@ public class InputHandlers : TrackerBase
 
     public AppConfig appConfig = new AppConfig();
 
-    private class Player {
+    public class Player {
         public Radiosity.OdysseyHubClient.IDevice device;
         public Vector2 point = Vector2.zero;
+    }
+
+    public SlotMachine<Player> Players {
+        get => players;
+        private set => players = value;
     }
 
     private SlotMachine<Player> players = new();
@@ -41,16 +46,12 @@ public class InputHandlers : TrackerBase
     private void OnEnable()
     {
         reset.action.performed += PerformReset;
-        resetzero.action.performed += PerformResetZero;
-        zero.action.performed += PerformZero;
         togglech.action.performed += ToggleCrosshair;
     }
 
     private void OnDisable()
     {
         reset.action.performed -= PerformReset;
-        resetzero.action.performed -= PerformResetZero;
-        zero.action.performed -= PerformZero;
         togglech.action.performed -= ToggleCrosshair;
     }
 
@@ -87,32 +88,37 @@ public class InputHandlers : TrackerBase
         screenShooter.CreateShot(screenPoint);
     }
 
-    private void PerformReset(InputAction.CallbackContext obj)
+    public void PerformReset()
     {
         screenShooter.ClearBulletHoles();
     }
 
-    private void PerformResetZero(InputAction.CallbackContext obj)
+    private void PerformReset(InputAction.CallbackContext obj)
     {
-        // if (client.isConnected()) {
-        //     foreach (var (_, player) in players) {
-        //         if (player.device != null) {
-        //             client.client.ResetZero(client.handle, player.device);
-        //         }
-        //     }
-        // }
+        PerformReset();
     }
 
-    private void PerformZero(InputAction.CallbackContext obj)
-    {
-        // if (client.isConnected()) {
-        //     foreach (var (_, player) in players) {
-        //         if (player.device != null) {
-        //             client.client.Zero(client.handle, player.device, new Radiosity.OdysseyHubClient.Vector3(0, -0.0635f, 0), new Radiosity.OdysseyHubClient.Vector2(0.5f, 0.5f));
-        //         }
-        //     }
-        // }
-    }
+    // private void PerformResetZero(InputAction.CallbackContext obj)
+    // {
+    //     if (client.isConnected()) {
+    //         foreach (var (_, player) in players) {
+    //             if (player.device != null) {
+    //                 client.client.ResetZero(client.handle, player.device);
+    //             }
+    //         }
+    //     }
+    // }
+
+    // private void PerformZero(InputAction.CallbackContext obj)
+    // {
+    //     if (client.isConnected()) {
+    //         foreach (var (_, player) in players) {
+    //             if (player.device != null) {
+    //                 client.client.Zero(client.handle, player.device, new Radiosity.OdysseyHubClient.Vector3(0, -0.0635f, 0), new Radiosity.OdysseyHubClient.Vector2(0.5f, 0.5f));
+    //             }
+    //         }
+    //     }
+    // }
 
     public void HandleScreenZeroInfo(Radiosity.OdysseyHubClient.ScreenInfo screenInfo) {
         // Convert Odyssey coordinate to Unity: center-origin and y-down
@@ -134,6 +140,17 @@ public class InputHandlers : TrackerBase
         // Set the offset of the Odyssey (0,0) — camera origin — in Unity space
         zero_translation = f(new Radiosity.OdysseyHubClient.Vector2(0f, 0f));
         zero_translation.z = distance_offset;
+    }
+
+    public void DeviceConnected(Radiosity.OdysseyHubClient.IDevice device) {
+        var player = new Player();
+        player.device = device;
+        player.point = new Vector2(-1, -1);
+        players.Allocate(player);
+    }
+
+    public void DeviceDisconnected(Radiosity.OdysseyHubClient.IDevice device) {
+        players.RemoveWhere(p => p.device.Equals(device));
     }
 
     // Start is called before the first frame update

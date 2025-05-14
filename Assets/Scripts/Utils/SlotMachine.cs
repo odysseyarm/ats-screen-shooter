@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 #nullable enable
 public class SlotMachine<T> : IEnumerable<(int index, T item)> where T : class

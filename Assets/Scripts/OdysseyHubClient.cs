@@ -8,6 +8,9 @@ public class OdysseyHubClient : MonoBehaviour
 {
     private InputHandlers inputHandlers;
 
+    [SerializeField]
+    private ScreenGUI screenGUI;
+
     private CancellationTokenSource cancellationTokenSource = new();
 
     public Radiosity.OdysseyHubClient.Handle handle = new();
@@ -34,6 +37,14 @@ public class OdysseyHubClient : MonoBehaviour
             inputHandlers.HandleScreenZeroInfo(screen_info);
         }
 
+        {
+            var (err, devices) = await client.GetDeviceList(handle);
+            foreach (var device in devices) {
+                inputHandlers.DeviceConnected(device);
+            }
+            screenGUI.Refresh();
+        }
+
         Channel<(Radiosity.OdysseyHubClient.IEvent, Radiosity.OdysseyHubClient.ClientError, string)> eventChannel = Channel.CreateUnbounded<(Radiosity.OdysseyHubClient.IEvent, Radiosity.OdysseyHubClient.ClientError, string)>();
         client.StartStream(handle, eventChannel.Writer);
 
@@ -50,8 +61,12 @@ public class OdysseyHubClient : MonoBehaviour
                                 inputHandlers.PerformShoot(deviceEvent.device);
                                 break;
                             case Radiosity.OdysseyHubClient.DeviceEvent.Connect _:
+                                inputHandlers.DeviceConnected(deviceEvent.device);
+                                screenGUI.Refresh();
                                 break;
                             case Radiosity.OdysseyHubClient.DeviceEvent.Disconnect _:
+                                inputHandlers.DeviceDisconnected(deviceEvent.device);
+                                screenGUI.Refresh();
                                 break;
                             case Radiosity.OdysseyHubClient.DeviceEvent.ZeroResult zeroResult:
                                 if (zeroResult.success) {

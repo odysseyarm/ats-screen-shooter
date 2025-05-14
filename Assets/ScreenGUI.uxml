@@ -1,13 +1,17 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement style="flex-grow: 1; width: auto; min-width: 20%; max-width: 256px; align-items: stretch; flex-direction: row; background-color: rgba(0, 0, 0, 0);">
+    <ui:VisualElement style="flex-grow: 1; width: auto; min-width: 256px; max-width: 30%; align-items: stretch; flex-direction: row; background-color: rgba(0, 0, 0, 0);">
         <ui:GroupBox style="flex-direction: column; align-items: flex-start; justify-content: flex-start; align-self: flex-start; right: auto; min-width: auto; background-color: rgba(255, 255, 255, 0.08);">
             <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
-                <ui:Label text="[F2]" />
+                <ui:Label text="[F1]" />
                 <ui:Label text="Toggle UI" />
             </ui:GroupBox>
             <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
+                <ui:Label text="[F2]" />
+                <ui:Button text="Clear Bullet Holes" name="Reset" />
+            </ui:GroupBox>
+            <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
                 <ui:Label text="[F3]" />
-                <ui:Button text="Clear Bullet Holes" name="ClearBulletHoles" />
+                <ui:Label text="Toggle Crosshairs" />
             </ui:GroupBox>
             <ui:ListView name="ZeroDeviceChoices" />
         </ui:GroupBox>
