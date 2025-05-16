@@ -16,10 +16,13 @@ public class InputHandlers : TrackerBase
     private ProjectionPlane projectionPlane;
 
     [SerializeField]
-    private InputActionReference reset, togglech;
+    private InputActionReference reset, togglech, togglezerotarget;
 
     [SerializeField]
     private Canvas crosshairCanvas;
+
+    [SerializeField]
+    private Canvas zeroTargetCanvas;
 
     [SerializeField]
     private Texture2D[] crosshairTextures;
@@ -28,6 +31,7 @@ public class InputHandlers : TrackerBase
     private ScreenShooter screenShooter;
 
     private bool showCrosshair = true;
+    private bool showZeroTarget = false;
 
     private Vector3 zero_translation = Vector3.zero;
 
@@ -51,17 +55,33 @@ public class InputHandlers : TrackerBase
     private void OnEnable()
     {
         reset.action.performed += PerformReset;
-        togglech.action.performed += ToggleCrosshair;
+        togglech.action.performed += ToggleCrosshairs;
+        togglezerotarget.action.performed += ToggleZeroTarget;
     }
 
     private void OnDisable()
     {
         reset.action.performed -= PerformReset;
-        togglech.action.performed -= ToggleCrosshair;
+        togglech.action.performed -= ToggleCrosshairs;
+        togglezerotarget.action.performed -= ToggleZeroTarget;
     }
 
-    private void ToggleCrosshair(InputAction.CallbackContext obj) {
+    public void ToggleCrosshairs()
+    {
         showCrosshair = !showCrosshair;
+    }
+
+    private void ToggleCrosshairs(InputAction.CallbackContext obj) {
+        ToggleCrosshairs();
+    }
+
+    public void ToggleZeroTarget()
+    {
+        showZeroTarget = !showZeroTarget;
+    }
+
+    private void ToggleZeroTarget(InputAction.CallbackContext obj) {
+        ToggleZeroTarget();
     }
 
     public void PerformTransformAndPoint(Radiosity.OdysseyHubClient.IDevice device, PoseUtils.UnityPose pose, Vector2 point)
@@ -176,11 +196,15 @@ public class InputHandlers : TrackerBase
 
     void OnGUI() {
         if (showCrosshair) {
+            crosshairCanvas.enabled = true;
             foreach (var (index, player) in players) {
                 Vector2 screenPointNormal = player.point;
                 Vector2 screenPoint = new Vector2(screenPointNormal.x * Screen.width, Screen.height - screenPointNormal.y * Screen.height);
                 player.crosshair.rectTransform.position = screenPoint;
             }
+        } else {
+            crosshairCanvas.enabled = false;
         }
+        zeroTargetCanvas.enabled = showZeroTarget;
     }
 }

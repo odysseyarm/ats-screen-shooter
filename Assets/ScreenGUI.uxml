@@ -7,11 +7,15 @@
             </ui:GroupBox>
             <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
                 <ui:Label text="[F2]" />
-                <ui:Button text="Clear Bullet Holes" name="Reset" />
+                <ui:Button text="Clear bullet holes" name="Reset" />
             </ui:GroupBox>
             <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
                 <ui:Label text="[F3]" />
-                <ui:Label text="Toggle Crosshairs" />
+                <ui:Button text="Toggle crosshairs" name="ToggleCrosshairs" />
+            </ui:GroupBox>
+            <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
+                <ui:Label text="[F4]" />
+                <ui:Button text="Toggle zero target" name="ToggleZeroTarget" />
             </ui:GroupBox>
             <ui:ListView name="ZeroDeviceChoices" />
         </ui:GroupBox>

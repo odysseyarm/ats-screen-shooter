@@ -27,6 +27,8 @@ public class ScreenGUI : MonoBehaviour
     {
         ui = GetComponent<UIDocument>();
         ui.rootVisualElement.Query<Button>("Reset").First().clicked += inputHandlers.PerformReset;
+        ui.rootVisualElement.Query<Button>("ToggleCrosshairs").First().clicked += inputHandlers.ToggleCrosshairs;
+        ui.rootVisualElement.Query<Button>("ToggleZeroTarget").First().clicked += inputHandlers.ToggleZeroTarget;
 
         RebuildListView();
     }

@@ -103,6 +103,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleZeroTarget",
+                    "type": "Button",
+                    "id": "e81ef4c7-91c3-4f14-aeed-6abee2892c74",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -125,6 +134,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "ToggleCrosshair",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b6cde808-af3a-40b2-bc8c-239d0635e2a6",
+                    "path": "<Keyboard>/f4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ToggleZeroTarget",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
