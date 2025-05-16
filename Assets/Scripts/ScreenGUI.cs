@@ -1,8 +1,10 @@
+using Radiosity.OdysseyHubClient;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -16,6 +18,9 @@ public class ScreenGUI : MonoBehaviour
 
     [SerializeField]
     private InputActionReference toggleUI;
+
+    [SerializeField]
+    private OdysseyHubClient client;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -85,7 +90,12 @@ public class ScreenGUI : MonoBehaviour
             }
             var groupBox = e as GroupBox;
             groupBox.Query<Label>().First().text = BitConverter.ToString(items[i].item.device.UUID).Replace("-", "");
-            // groupBox.Query<Button>().First() = items[i];
+            groupBox.Query<Button>().First().clicked += () => {
+                client.client.Zero(client.handle, items[i].item.device, new Radiosity.OdysseyHubClient.Vector3(0, -0.0635f, 0), new Radiosity.OdysseyHubClient.Vector2(0.5f, 0.5f));
+            };
+            groupBox.Query<Button>().AtIndex(1).clicked += () => {
+                client.client.ResetZero(client.handle, items[i].item.device);
+            };
         };
 
         listView.makeItem = makeItem;

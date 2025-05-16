@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Processors;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(ScreenShooter))]
 [RequireComponent(typeof(InputHandlers))]
@@ -18,7 +19,10 @@ public class InputHandlers : TrackerBase
     private InputActionReference reset, togglech;
 
     [SerializeField]
-    private Texture[] crosshairTextures;
+    private Canvas crosshairCanvas;
+
+    [SerializeField]
+    private Texture2D[] crosshairTextures;
 
     private OdysseyHubClient client;
     private ScreenShooter screenShooter;
@@ -34,6 +38,7 @@ public class InputHandlers : TrackerBase
     public class Player {
         public Radiosity.OdysseyHubClient.IDevice device;
         public Vector2 point = Vector2.zero;
+        public Image crosshair;
     }
 
     public SlotMachine<Player> Players {
@@ -63,9 +68,8 @@ public class InputHandlers : TrackerBase
     {
         Player player = players.Find(p => p.device.Equals(device));
         if (player == null) {
-            player = new Player();
-            player.device = device;
-            players.Allocate(player);
+            // DeviceConnected should handle this
+            return;
         }
         player.point = point;
 
@@ -146,7 +150,11 @@ public class InputHandlers : TrackerBase
         var player = new Player();
         player.device = device;
         player.point = new Vector2(-1, -1);
-        players.Allocate(player);
+        var index = players.Allocate(player);
+        var i = index > crosshairTextures.Length ? crosshairTextures.Length - 1 : index;
+        player.crosshair = new GameObject("CrosshairPlayer" + index).AddComponent<Image>();
+        player.crosshair.transform.SetParent(crosshairCanvas.transform, false);
+        player.crosshair.GetComponent<Image>().sprite = Sprite.Create(crosshairTextures[i], new Rect(0, 0, crosshairTextures[i].width, crosshairTextures[i].height), new Vector2(0.5f, 0.5f), 1.0f);
     }
 
     public void DeviceDisconnected(Radiosity.OdysseyHubClient.IDevice device) {
@@ -168,15 +176,11 @@ public class InputHandlers : TrackerBase
 
     void OnGUI() {
         if (showCrosshair) {
-            GUI.BeginGroup(new Rect(0, 0, Screen.width, Screen.height));
             foreach (var (index, player) in players) {
-                var i = index > crosshairTextures.Length ? crosshairTextures.Length - 1 : index;
-                var texture = crosshairTextures[i];
                 Vector2 screenPointNormal = player.point;
                 Vector2 screenPoint = new Vector2(screenPointNormal.x * Screen.width, Screen.height - screenPointNormal.y * Screen.height);
-                GUI.DrawTexture(new Rect(screenPoint.x - 52 / 2, Screen.height - screenPoint.y - 52 / 2, 52, 52), texture, ScaleMode.StretchToFill, true, 0);
+                player.crosshair.rectTransform.position = screenPoint;
             }
-            GUI.EndGroup();
         }
     }
 }
