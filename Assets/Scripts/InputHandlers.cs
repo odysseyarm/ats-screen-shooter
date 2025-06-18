@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Processors;
 using UnityEngine.UI;
+using ohc = Radiosity.OdysseyHubClient;
 
 [RequireComponent(typeof(ScreenShooter))]
 [RequireComponent(typeof(InputHandlers))]
@@ -40,7 +41,7 @@ public class InputHandlers : TrackerBase
     public AppConfig appConfig = new AppConfig();
 
     public class Player {
-        public Radiosity.OdysseyHubClient.IDevice device;
+        public ohc.uniffi.DeviceRecord device;
         public Vector2 point = Vector2.zero;
         public Image crosshair;
     }
@@ -84,25 +85,27 @@ public class InputHandlers : TrackerBase
         ToggleZeroTarget();
     }
 
-    public void PerformTransformAndPoint(Radiosity.OdysseyHubClient.IDevice device, PoseUtils.UnityPose pose, Vector2 point)
+    public void PerformTransformAndPoint(ohc.uniffi.DeviceRecord deviceR, PoseUtils.UnityPose pose, Vector2 point)
     {
-        Player player = players.Find(p => p.device.Equals(device));
+        Player player = players.Find(p => p.device == deviceR);
         if (player == null) {
             // DeviceConnected should handle this
             return;
         }
         player.point = point;
 
-        if (appConfig.Data.helmet_uuids.Any(uuid => player.device.UUID.SequenceEqual(uuid)))
+        var device = new ohc.uniffi.Device(deviceR);
+
+        if (appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid()))
         {
             IsTracking = true;
             translation = zero_translation + pose.position;
         }
     }
 
-    public void PerformShoot(Radiosity.OdysseyHubClient.IDevice device)
+    public void PerformShoot(ohc.uniffi.DeviceRecord device)
     {
-        var player = players.Find(p => p.device.Equals(device));
+        var player = players.Find(p => p.device == device);
         if (player == null) {
             // device was already connected before we connected our client and never performed point
             return;
@@ -144,9 +147,9 @@ public class InputHandlers : TrackerBase
     //     }
     // }
 
-    public void HandleScreenZeroInfo(Radiosity.OdysseyHubClient.ScreenInfo screenInfo) {
+    public void HandleScreenZeroInfo(ohc.uniffi.ScreenInfo screenInfo) {
         // Convert Odyssey coordinate to Unity: center-origin and y-down
-        Vector2 f(Radiosity.OdysseyHubClient.Vector2 vec) {
+        Vector2 f(ohc.uniffi.Vector2f32 vec) {
             float centerX = (screenInfo.tr.x + screenInfo.tl.x) * 0.5f;
             float centerY = (screenInfo.tl.y + screenInfo.bl.y) * 0.5f;
             float unityX = vec.x - centerX;
@@ -162,11 +165,11 @@ public class InputHandlers : TrackerBase
         projectionPlane.SetLocalBounds(tl, tr, bl, br);
 
         // Set the offset of the Odyssey (0,0) — camera origin — in Unity space
-        zero_translation = f(new Radiosity.OdysseyHubClient.Vector2(0f, 0f));
+        zero_translation = f(new ohc.uniffi.Vector2f32(0f, 0f));
         zero_translation.z = distance_offset;
     }
 
-    public void DeviceConnected(Radiosity.OdysseyHubClient.IDevice device) {
+    public void DeviceConnected(ohc.uniffi.DeviceRecord device) {
         var player = new Player();
         player.device = device;
         player.point = new Vector2(-1, -1);
@@ -177,8 +180,8 @@ public class InputHandlers : TrackerBase
         player.crosshair.GetComponent<Image>().sprite = Sprite.Create(crosshairTextures[i], new Rect(0, 0, crosshairTextures[i].width, crosshairTextures[i].height), new Vector2(0.5f, 0.5f), 1.0f);
     }
 
-    public void DeviceDisconnected(Radiosity.OdysseyHubClient.IDevice device) {
-        players.RemoveWhere(p => p.device.Equals(device));
+    public void DeviceDisconnected(ohc.uniffi.DeviceRecord deviceR) {
+        players.RemoveWhere(p => p.device == deviceR);
     }
 
     // Start is called before the first frame update

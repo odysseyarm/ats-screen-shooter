@@ -1,5 +1,5 @@
 using UnityEngine;
-using RadiosityPose = Radiosity.OdysseyHubClient.Pose;
+using RadiosityPose = Radiosity.OdysseyHubClient.uniffi.Pose;
 
 public static class PoseUtils
 {

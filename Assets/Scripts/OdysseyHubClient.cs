@@ -1,7 +1,9 @@
+using System;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using UnityEngine;
+using ohc = Radiosity.OdysseyHubClient;
 
 [RequireComponent(typeof(InputHandlers))]
 public class OdysseyHubClient : MonoBehaviour
@@ -13,7 +15,6 @@ public class OdysseyHubClient : MonoBehaviour
 
     private CancellationTokenSource cancellationTokenSource = new();
 
-    public Radiosity.OdysseyHubClient.Handle handle = new();
     public Radiosity.OdysseyHubClient.Client client = new();
 
     private bool _isConnected = false;
@@ -21,11 +22,14 @@ public class OdysseyHubClient : MonoBehaviour
     private async void Start() {
         inputHandlers = GetComponent<InputHandlers>();
 
-        Radiosity.OdysseyHubClient.ClientError clientError;
-
-        while ((clientError = await client.Connect(handle)) != Radiosity.OdysseyHubClient.ClientError.None) {
-            Debug.Log($"Error connecting to Odyssey Hub: {clientError}. Trying again in 1 second.");
-            await Awaitable.WaitForSecondsAsync(1, cancellationTokenSource.Token);
+        while (true) {
+            try {
+                await client.Connect();
+                break;
+            } catch (ohc.uniffi.AnyhowException e) {
+                Debug.Log($"Error connecting to Odyssey Hub:\n\n{e.AnyhowMessage()} \n\nTrying again in 1 second.");
+                await Awaitable.WaitForSecondsAsync(1, cancellationTokenSource.Token);
+            }
         }
 
         _isConnected = true;
@@ -33,52 +37,60 @@ public class OdysseyHubClient : MonoBehaviour
         Debug.Log("Connected to Odyssey Hub");
 
         {
-            var (err, err_msg, screen_info) = await client.GetScreenInfoById(handle, 0);
+            var screen_info = await client.GetScreenInfoById(0);
             inputHandlers.HandleScreenZeroInfo(screen_info);
         }
 
         {
-            var (err, devices) = await client.GetDeviceList(handle);
+            var devices = await client.GetDeviceList();
             foreach (var device in devices) {
                 inputHandlers.DeviceConnected(device);
             }
             screenGUI.Refresh();
         }
 
-        Channel<(Radiosity.OdysseyHubClient.IEvent, Radiosity.OdysseyHubClient.ClientError, string)> eventChannel = Channel.CreateUnbounded<(Radiosity.OdysseyHubClient.IEvent, Radiosity.OdysseyHubClient.ClientError, string)>();
-        client.StartStream(handle, eventChannel.Writer);
+#nullable enable
+        Channel<(ohc.uniffi.Event?, ohc.uniffi.ClientException?)> eventChannel = Channel.CreateUnbounded<(ohc.uniffi.Event?, ohc.uniffi.ClientException?)>();
+#nullable disable
+        await Task.Factory.StartNew(async () => await client.RunStream(eventChannel.Writer), TaskCreationOptions.LongRunning);
 
         try {
-            await foreach ((var @event, var err, var err_msg) in eventChannel.Reader.ReadAllAsync(cancellationTokenSource.Token)) {
-                switch (@event) {
-                    case Radiosity.OdysseyHubClient.DeviceEvent deviceEvent:
-                        switch (deviceEvent.kind) {
-                            case Radiosity.OdysseyHubClient.DeviceEvent.Tracking tracking:
-                                var unityPose = PoseUtils.ConvertOdyPoseToUnity(tracking.pose);
-                                inputHandlers.PerformTransformAndPoint(deviceEvent.device, unityPose, new Vector2(tracking.aimpoint.x, tracking.aimpoint.y));
-                                break;
-                            case Radiosity.OdysseyHubClient.DeviceEvent.Impact impact:
-                                inputHandlers.PerformShoot(deviceEvent.device);
-                                break;
-                            case Radiosity.OdysseyHubClient.DeviceEvent.Connect _:
-                                inputHandlers.DeviceConnected(deviceEvent.device);
-                                screenGUI.Refresh();
-                                break;
-                            case Radiosity.OdysseyHubClient.DeviceEvent.Disconnect _:
-                                inputHandlers.DeviceDisconnected(deviceEvent.device);
-                                screenGUI.Refresh();
-                                break;
-                            case Radiosity.OdysseyHubClient.DeviceEvent.ZeroResult zeroResult:
-                                if (zeroResult.success) {
-                                    Debug.Log("Zero successful");
-                                } else {
-                                    Debug.Log($"Zero failed. Try again");
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                        break;
+            await foreach ((var @event, var err) in eventChannel.Reader.ReadAllAsync(cancellationTokenSource.Token)) {
+                if (err != null) {
+                    Debug.Log(err.Message);
+                    break;
+                }
+                if (@event != null) {
+                    switch (@event) {
+                        case ohc.uniffi.Event.DeviceEvent deviceEvent:
+                            switch (deviceEvent.v1.kind) {
+                                case ohc.uniffi.DeviceEventKind.TrackingEvent tracking:
+                                    var unityPose = PoseUtils.ConvertOdyPoseToUnity(tracking.v1.pose);
+                                    inputHandlers.PerformTransformAndPoint(deviceEvent.v1.device, unityPose, new Vector2(tracking.v1.aimpoint.x, tracking.v1.aimpoint.y));
+                                    break;
+                                case ohc.uniffi.DeviceEventKind.ImpactEvent impact:
+                                    inputHandlers.PerformShoot(deviceEvent.v1.device);
+                                    break;
+                                case ohc.uniffi.DeviceEventKind.ConnectEvent _:
+                                    inputHandlers.DeviceConnected(deviceEvent.v1.device);
+                                    screenGUI.Refresh();
+                                    break;
+                                case ohc.uniffi.DeviceEventKind.DisconnectEvent _:
+                                    inputHandlers.DeviceDisconnected(deviceEvent.v1.device);
+                                    screenGUI.Refresh();
+                                    break;
+                                case ohc.uniffi.DeviceEventKind.ZeroResult zeroResult:
+                                    if (zeroResult.v1) {
+                                        Debug.Log("Zero successful");
+                                    } else {
+                                        Debug.Log($"Zero failed. Try again");
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                    }
                 }
             }
         } catch (System.OperationCanceledException) { }

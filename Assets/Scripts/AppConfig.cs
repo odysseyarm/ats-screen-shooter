@@ -7,7 +7,7 @@ using UnityEngine;
 public class ConfigData
 {
     [NonSerialized]
-    public List<byte[]> helmet_uuids = new();
+    public List<ulong> helmet_uuids = new();
 
     // Serializable proxy for `helmet_uuids`
     [SerializeField]
@@ -18,21 +18,16 @@ public class ConfigData
         helmet_uuids.Clear();
         foreach (string hex in helmet_hex_uuids)
         {
-            byte[] bytes = new byte[6];
-            for (int i = 0; i < 6; i++)
-                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-            helmet_uuids.Add(bytes);
+            helmet_uuids.Add(Convert.ToUInt64(hex, 16));
         }
     }
 
     public void ToHex()
     {
         helmet_hex_uuids.Clear();
-        foreach (var bytes in helmet_uuids)
+        foreach (var num in helmet_uuids)
         {
-            if (bytes.Length != 6)
-                throw new InvalidOperationException("UUID must be 6 bytes.");
-            helmet_hex_uuids.Add(BitConverter.ToString(bytes).Replace("-", "").ToLower());
+            helmet_hex_uuids.Add(string.Format("0x{0:X}", num));
         }
     }
 }

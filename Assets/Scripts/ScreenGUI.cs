@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
+using ohc = Radiosity.OdysseyHubClient;
 
 public class ScreenGUI : MonoBehaviour
 {
@@ -91,12 +92,12 @@ public class ScreenGUI : MonoBehaviour
                 return;
             }
             var groupBox = e as GroupBox;
-            groupBox.Query<Label>().First().text = BitConverter.ToString(items[i].item.device.UUID).Replace("-", "");
+            groupBox.Query<Label>().First().text = string.Format("0x{0:X}", new ohc.uniffi.Device(items[i].item.device).Uuid());
             groupBox.Query<Button>().First().clicked += () => {
-                client.client.Zero(client.handle, items[i].item.device, new Radiosity.OdysseyHubClient.Vector3(0, -0.0635f, 0), new Radiosity.OdysseyHubClient.Vector2(0.5f, 0.5f));
+                client.client.Zero(items[i].item.device, new ohc.uniffi.Vector3f32(0, -0.0635f, 0), new ohc.uniffi.Vector2f32(0.5f, 0.5f));
             };
             groupBox.Query<Button>().AtIndex(1).clicked += () => {
-                client.client.ResetZero(client.handle, items[i].item.device);
+                client.client.ResetZero(items[i].item.device);
             };
         };
 
