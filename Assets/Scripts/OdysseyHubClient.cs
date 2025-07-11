@@ -44,7 +44,7 @@ public class OdysseyHubClient : MonoBehaviour
         {
             var devices = await client.GetDeviceList();
             foreach (var device in devices) {
-                inputHandlers.DeviceConnected(device);
+                await inputHandlers.DeviceConnected(device);
             }
             screenGUI.Refresh();
         }
@@ -65,14 +65,13 @@ public class OdysseyHubClient : MonoBehaviour
                         case ohc.uniffi.Event.DeviceEvent deviceEvent:
                             switch (deviceEvent.v1.kind) {
                                 case ohc.uniffi.DeviceEventKind.TrackingEvent tracking:
-                                    var unityPose = PoseUtils.ConvertOdyPoseToUnity(tracking.v1.pose);
-                                    inputHandlers.PerformTransformAndPoint(deviceEvent.v1.device, unityPose, new Vector2(tracking.v1.aimpoint.x, tracking.v1.aimpoint.y));
+                                    inputHandlers.TrackingEventHandler(deviceEvent.v1.device, tracking.v1);
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ImpactEvent impact:
-                                    inputHandlers.PerformShoot(deviceEvent.v1.device);
+                                    inputHandlers.PerformShoot(deviceEvent.v1.device, impact.v1.timestamp);
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ConnectEvent _:
-                                    inputHandlers.DeviceConnected(deviceEvent.v1.device);
+                                    _ = Task.Run(async () => { await inputHandlers.DeviceConnected(deviceEvent.v1.device); });
                                     screenGUI.Refresh();
                                     break;
                                 case ohc.uniffi.DeviceEventKind.DisconnectEvent _:
@@ -85,6 +84,10 @@ public class OdysseyHubClient : MonoBehaviour
                                     } else {
                                         Debug.Log($"Zero failed. Try again");
                                     }
+                                    break;
+                                case ohc.uniffi.DeviceEventKind.ShotDelayChanged shotDelayChanged:
+                                    var delay_ms = shotDelayChanged.v1;
+                                    inputHandlers.ShotDelayChangedHandler(deviceEvent.v1.device, delay_ms);
                                     break;
                                 default:
                                     break;

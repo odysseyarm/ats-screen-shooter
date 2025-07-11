@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Processors;
@@ -42,6 +43,8 @@ public class InputHandlers : TrackerBase
 
     public class Player {
         public ohc.uniffi.DeviceRecord device;
+        public ohc.uniffi.TrackingHistory trackingHistory;
+        public ushort shotDelayMS;
         public Vector2 point = Vector2.zero;
         public Image crosshair;
     }
@@ -85,34 +88,48 @@ public class InputHandlers : TrackerBase
         ToggleZeroTarget();
     }
 
-    public void PerformTransformAndPoint(ohc.uniffi.DeviceRecord deviceR, PoseUtils.UnityPose pose, Vector2 point)
+    public void TrackingEventHandler(ohc.uniffi.DeviceRecord deviceR, ohc.uniffi.TrackingEvent tracking)
     {
+        var unityPose = PoseUtils.ConvertOdyPoseToUnity(tracking.pose);
+        var point = new Vector2(tracking.aimpoint.x, tracking.aimpoint.y);
         Player player = players.Find(p => p.device == deviceR);
         if (player == null) {
             // DeviceConnected should handle this
             return;
         }
         player.point = point;
+        player.trackingHistory.Push(tracking);
 
         var device = new ohc.uniffi.Device(deviceR);
 
         if (appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid()))
         {
             IsTracking = true;
-            translation = zero_translation + pose.position;
+            translation = zero_translation + unityPose.position;
         }
     }
 
-    public void PerformShoot(ohc.uniffi.DeviceRecord device)
+    public void PerformShoot(ohc.uniffi.DeviceRecord device, uint timestamp)
     {
         var player = players.Find(p => p.device == device);
         if (player == null) {
             // device was already connected before we connected our client and never performed point
             return;
         }
-        Vector2 screenPointNormal = player.point;
+        var tracking_point = player.trackingHistory.GetClosest(timestamp - (uint)player.shotDelayMS*1000).aimpoint;
+        Vector2 screenPointNormal = new Vector2(tracking_point.x, tracking_point.y);
         Vector2 screenPoint = new Vector2(screenPointNormal.x * Screen.width, Screen.height - screenPointNormal.y * Screen.height);
         screenShooter.CreateShot(screenPoint);
+    }
+
+    public void ShotDelayChangedHandler(ohc.uniffi.DeviceRecord device, ushort delay_ms)
+    {
+        var player = players.Find(p => p.device == device);
+        if (player == null) {
+            // device was already connected before we connected our client and never performed point
+            return;
+        }
+        player.shotDelayMS = delay_ms;
     }
 
     public void PerformReset()
@@ -169,10 +186,12 @@ public class InputHandlers : TrackerBase
         zero_translation.z = distance_offset;
     }
 
-    public void DeviceConnected(ohc.uniffi.DeviceRecord device) {
+    public async Task DeviceConnected(ohc.uniffi.DeviceRecord device) {
         var player = new Player();
         player.device = device;
         player.point = new Vector2(-1, -1);
+        player.shotDelayMS = await client.client.GetShotDelay(device);
+        player.trackingHistory = new ohc.uniffi.TrackingHistory(100);
         var index = players.Allocate(player);
         var i = index > crosshairTextures.Length ? crosshairTextures.Length - 1 : index;
         player.crosshair = new GameObject("CrosshairPlayer" + index).AddComponent<Image>();
