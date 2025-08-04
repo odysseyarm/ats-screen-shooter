@@ -11,12 +11,10 @@ public class ExitModalManager : MonoBehaviour
     [Header("Manager References")]
     public AppManager appManager;
     
-    private UserInputActions inputActions;
+    public AppControls inputActions;
     
     void Awake()
     {
-        inputActions = new UserInputActions();
-        
         if (confirmExitButton == null || cancelExitButton == null)
         {
             Debug.LogError("ExitModalManager: Button references not set!");
@@ -35,7 +33,7 @@ public class ExitModalManager : MonoBehaviour
     void OnEnable()
     {
         inputActions.ExitModal.Enable();
-        inputActions.Gameplay.Disable();
+        inputActions.UI.Disable();
         
         inputActions.ExitModal.Exit.performed += OnExitPressed;
         inputActions.ExitModal.Back.performed += OnBackPressed;
@@ -52,7 +50,7 @@ public class ExitModalManager : MonoBehaviour
         inputActions.ExitModal.Exit.performed -= OnExitPressed;
         inputActions.ExitModal.Back.performed -= OnBackPressed;
         inputActions.ExitModal.Disable();
-        inputActions.Gameplay.Enable();
+        inputActions.UI.Enable();
         
         if (confirmExitButton != null)
             confirmExitButton.onClick.RemoveListener(TriggerExit);

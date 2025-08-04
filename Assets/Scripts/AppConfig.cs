@@ -60,7 +60,7 @@ public class ConfigData
     }
 }
 
-public class AppConfig
+public class ATSAppConfig
 {
     private static string ConfigPath => Path.Combine(Application.persistentDataPath, "config.json");
 
