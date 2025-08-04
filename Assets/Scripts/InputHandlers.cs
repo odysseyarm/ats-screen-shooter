@@ -39,7 +39,7 @@ public class InputHandlers : TrackerBase
 
     private float distance_offset = 1.0f; // todo this is the camera's initial local position, maybe retrieve it instead of relying on it to not be changed
 
-    public AppConfig appConfig = new AppConfig();
+    public ATSAppConfig appConfig = new ATSAppConfig();
 
     public class Player {
         public ohc.uniffi.DeviceRecord device;
@@ -181,7 +181,7 @@ public class InputHandlers : TrackerBase
 
         projectionPlane.SetLocalBounds(tl, tr, bl, br);
 
-        // Set the offset of the Odyssey (0,0) — camera origin — in Unity space
+        // Set the offset of the Odyssey (0,0) ï¿½ camera origin ï¿½ in Unity space
         zero_translation = f(new ohc.uniffi.Vector2f32(0f, 0f));
         zero_translation.z = distance_offset;
     }
