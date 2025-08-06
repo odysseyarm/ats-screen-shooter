@@ -26,6 +26,7 @@ public class ScreenGUI : MonoBehaviour
     private OdysseyHubClient client;
 
     private SceneSwitcher sceneSwitcher;
+    private LightingModeManager lightingModeManager;
 
     private void Awake()
     {
@@ -41,6 +42,7 @@ public class ScreenGUI : MonoBehaviour
         ui.rootVisualElement.Query<Button>("ToggleCrosshairs").First().clicked += inputHandlers.ToggleCrosshairs;
         ui.rootVisualElement.Query<Button>("ToggleZeroTarget").First().clicked += inputHandlers.ToggleZeroTarget;
         ui.rootVisualElement.Query<Button>("SwitchScene").First().clicked += PerformSwitchScene;
+        ui.rootVisualElement.Query<Button>("ToggleDarkMode").First().clicked += PerformToggleDarkMode;
         
         UpdateSwitchButtonText();
         
@@ -53,6 +55,12 @@ public class ScreenGUI : MonoBehaviour
         {
             sceneSwitcher.Initialize(inputActions);
         }
+        
+        lightingModeManager = FindObjectOfType<LightingModeManager>();
+        if (lightingModeManager == null)
+        {
+            Debug.LogWarning("LightingModeManager not found - Dark Mode will not be available");
+        }
 
         RebuildListView();
     }
@@ -62,6 +70,14 @@ public class ScreenGUI : MonoBehaviour
         if (sceneSwitcher != null)
         {
             sceneSwitcher.SwitchScene();
+        }
+    }
+    
+    private void PerformToggleDarkMode()
+    {
+        if (lightingModeManager != null)
+        {
+            lightingModeManager.ToggleLightingMode();
         }
     }
 
