@@ -19,7 +19,7 @@ public class InputHandlers : TrackerBase
     private ProjectionPlane projectionPlane;
 
     [SerializeField]
-    private InputActionReference reset, togglech, togglezerotarget;
+    private InputActionReference reset, togglech, togglezerotarget, toggledarkmode;
 
     [SerializeField]
     private Canvas crosshairCanvas;
@@ -32,6 +32,8 @@ public class InputHandlers : TrackerBase
 
     private OdysseyHubClient client;
     private ScreenShooter screenShooter;
+    private LightingModeManager lightingModeManager;
+    private AppControls appControls;
 
     [SerializeField]
     private ScreenGUI screenGUI;
@@ -62,9 +64,16 @@ public class InputHandlers : TrackerBase
 
     private void OnEnable()
     {
+        // Enable all the actions
+        reset.action.Enable();
+        togglech.action.Enable();
+        togglezerotarget.action.Enable();
+        toggledarkmode.action.Enable();
+        
         reset.action.performed += PerformReset;
         togglech.action.performed += ToggleCrosshairs;
         togglezerotarget.action.performed += ToggleZeroTarget;
+        toggledarkmode.action.performed += ToggleDarkMode;
     }
 
     private void OnDisable()
@@ -72,6 +81,13 @@ public class InputHandlers : TrackerBase
         reset.action.performed -= PerformReset;
         togglech.action.performed -= ToggleCrosshairs;
         togglezerotarget.action.performed -= ToggleZeroTarget;
+        toggledarkmode.action.performed -= ToggleDarkMode;
+        
+        // Disable all the actions
+        reset.action.Disable();
+        togglech.action.Disable();
+        togglezerotarget.action.Disable();
+        toggledarkmode.action.Disable();
     }
 
     public void ToggleCrosshairs()
@@ -90,6 +106,14 @@ public class InputHandlers : TrackerBase
 
     private void ToggleZeroTarget(InputAction.CallbackContext obj) {
         ToggleZeroTarget();
+    }
+    
+    private void ToggleDarkMode(InputAction.CallbackContext obj)
+    {
+        if (lightingModeManager != null)
+        {
+            lightingModeManager.ToggleLightingMode();
+        }
     }
 
     public void TrackingEventHandler(ohc.uniffi.Device device, ohc.uniffi.TrackingEvent tracking)
@@ -223,11 +247,35 @@ public class InputHandlers : TrackerBase
         client = GetComponent<OdysseyHubClient>();
         screenShooter = GetComponent<ScreenShooter>();
         appConfig.Load();
+        
+        if (toggledarkmode == null || toggledarkmode.action == null)
+        {
+            appControls = new AppControls();
+            appControls.Player.Enable();
+            
+            appControls.Player.ToggleDarkMode.performed += ToggleDarkMode;
+        }
+        
+        lightingModeManager = FindObjectOfType<LightingModeManager>();
+        if (lightingModeManager == null)
+        {
+            GameObject lightingManagerObj = new GameObject("LightingModeManager");
+            lightingModeManager = lightingManagerObj.AddComponent<LightingModeManager>();
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+    }
+
+    void OnDestroy()
+    {
+        if (appControls != null)
+        {
+            appControls.Player.Disable();
+            appControls.Dispose();
+        }
     }
 
     void OnGUI() {

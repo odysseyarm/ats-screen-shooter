@@ -21,6 +21,10 @@
                 <ui:Label text="[F5]" />
                 <ui:Button text="Switch to Outdoor" name="SwitchScene" />
             </ui:GroupBox>
+            <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
+                <ui:Label text="[F6]" />
+                <ui:Button text="Toggle Dark Mode" name="ToggleDarkMode" />
+            </ui:GroupBox>
             <ui:ListView name="ZeroDeviceChoices" />
         </ui:GroupBox>
     </ui:VisualElement>
