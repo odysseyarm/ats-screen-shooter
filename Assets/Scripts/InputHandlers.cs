@@ -64,12 +64,10 @@ public class InputHandlers : TrackerBase
         reset.action.Enable();
         togglech.action.Enable();
         togglezerotarget.action.Enable();
-        toggledarkmode.action.Enable();
         
         reset.action.performed += PerformReset;
         togglech.action.performed += ToggleCrosshairs;
         togglezerotarget.action.performed += ToggleZeroTarget;
-        toggledarkmode.action.performed += ToggleDarkMode;
     }
 
     private void OnDisable()
@@ -77,13 +75,11 @@ public class InputHandlers : TrackerBase
         reset.action.performed -= PerformReset;
         togglech.action.performed -= ToggleCrosshairs;
         togglezerotarget.action.performed -= ToggleZeroTarget;
-        toggledarkmode.action.performed -= ToggleDarkMode;
         
         // Disable all the actions
         reset.action.Disable();
         togglech.action.Disable();
         togglezerotarget.action.Disable();
-        toggledarkmode.action.Disable();
     }
 
     public void ToggleCrosshairs()
