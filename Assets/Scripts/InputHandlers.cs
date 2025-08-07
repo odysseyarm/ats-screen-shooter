@@ -106,9 +106,16 @@ public class InputHandlers : TrackerBase
     
     private void ToggleDarkMode(InputAction.CallbackContext obj)
     {
+        Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: ToggleDarkMode() triggered via input - Phase: {obj.phase}");
+        
         if (lightingModeManager != null)
         {
+            Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: Calling LightingModeManager.ToggleLightingMode()");
             lightingModeManager.ToggleLightingMode();
+        }
+        else
+        {
+            Debug.LogWarning($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: LightingModeManager is null, cannot toggle dark mode");
         }
     }
 
@@ -255,8 +262,7 @@ public class InputHandlers : TrackerBase
         lightingModeManager = FindObjectOfType<LightingModeManager>();
         if (lightingModeManager == null)
         {
-            GameObject lightingManagerObj = new GameObject("LightingModeManager");
-            lightingModeManager = lightingManagerObj.AddComponent<LightingModeManager>();
+            Debug.LogError($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: LightingModeManager not found in scene! Please add it to the scene.");
         }
     }
 

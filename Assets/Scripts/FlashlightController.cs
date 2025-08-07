@@ -4,15 +4,15 @@ using UnityEngine.Rendering.Universal;
 public class FlashlightController : MonoBehaviour
 {
     [Header("Flashlight Settings")]
-    [SerializeField] private float intensity = 5000f;
+    [SerializeField] private float intensity = 600f;
     [SerializeField] private float range = 100f;
-    [SerializeField] private float spotAngle = 20f;
-    [SerializeField] private float innerSpotAngle = 8f;
+    [SerializeField] private float spotAngle = 25f;
+    [SerializeField] private float innerSpotAngle = 10f;
     [SerializeField] private Color lightColor = new Color(0.95f, 0.95f, 1f);
-    [SerializeField] private AnimationCurve falloffCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f); // Falloff over distance
+    [SerializeField] private AnimationCurve falloffCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
     
     [Header("Mounting Position")]
-    [SerializeField] private Vector3 mountOffset = new Vector3(0.1f, -0.15f, 0.3f); // Right, down, forward from camera
+    [SerializeField] private Vector3 mountOffset = new Vector3(0.1f, -0.15f, 0.3f);
     
     [Header("References")]
     [SerializeField] private Light flashlightLight;
@@ -59,11 +59,10 @@ public class FlashlightController : MonoBehaviour
                     if (player != null && player.point != null)
                     {
                         Vector2 screenPointNormal = player.point;
-                        // Convert normalized coordinates to screen coordinates
                         Vector3 screenPoint = new Vector3(
                             screenPointNormal.x * Screen.width,
                             Screen.height - screenPointNormal.y * Screen.height,
-                            10f // Distance from camera for ray calculation
+                            10f
                         );
                         
                         Ray ray = targetCamera.ScreenPointToRay(screenPoint);
@@ -89,6 +88,9 @@ public class FlashlightController : MonoBehaviour
                             flashlightLight.transform.position = lightPosition;
                             Vector3 aimDirection = (targetPoint - lightPosition).normalized;
                             flashlightLight.transform.rotation = Quaternion.LookRotation(aimDirection);
+                            
+                            // Use constant intensity - no dynamic adjustment
+                            flashlightLight.intensity = intensity;
                         }
                         
                         break;
@@ -117,12 +119,16 @@ public class FlashlightController : MonoBehaviour
         flashlightLight.shadowBias = 0.05f;
         flashlightLight.shadowNormalBias = 0.4f;
         
+        flashlightLight.renderMode = LightRenderMode.ForcePixel;
+        flashlightLight.bounceIntensity = 0.1f;
+        
         UniversalAdditionalLightData lightData = flashlightObj.AddComponent<UniversalAdditionalLightData>();
         
-        // Use inverse square falloff for realistic light attenuation
         lightData.usePipelineSettings = false;
         lightData.lightCookieSize = new Vector2(1f, 1f);
         lightData.lightCookieOffset = Vector2.zero;
+        
+        lightData.softShadowQuality = UnityEngine.Rendering.Universal.SoftShadowQuality.High;
     }
     
     public void AttachToTransform(Transform target)
@@ -132,7 +138,8 @@ public class FlashlightController : MonoBehaviour
     
     public void ToggleFlashlight()
     {
-        SetFlashlightEnabled(!isEnabled);
+        bool newState = !isEnabled;
+        SetFlashlightEnabled(newState);
     }
     
     public void SetFlashlightEnabled(bool enabled)
@@ -141,6 +148,10 @@ public class FlashlightController : MonoBehaviour
         if (flashlightLight != null)
         {
             flashlightLight.enabled = enabled;
+        }
+        else
+        {
+            Debug.LogWarning("FlashlightController: flashlightLight is null, cannot set enabled state");
         }
     }
     
@@ -151,10 +162,11 @@ public class FlashlightController : MonoBehaviour
     
     public void SetIntensity(float newIntensity)
     {
-        intensity = newIntensity;
+        intensity = Mathf.Clamp(newIntensity, 0f, 500f);
         if (flashlightLight != null)
         {
             flashlightLight.intensity = intensity;
+            flashlightLight.color = lightColor;
         }
     }
     
