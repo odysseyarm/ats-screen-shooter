@@ -75,9 +75,16 @@ public class ScreenGUI : MonoBehaviour
     
     private void PerformToggleDarkMode()
     {
+        Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] ScreenGUI: PerformToggleDarkMode() triggered via UI");
+        
         if (lightingModeManager != null)
         {
+            Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] ScreenGUI: Calling LightingModeManager.ToggleLightingMode()");
             lightingModeManager.ToggleLightingMode();
+        }
+        else
+        {
+            Debug.LogWarning($"[{System.DateTime.Now:HH:mm:ss.fff}] ScreenGUI: LightingModeManager is null, cannot toggle dark mode");
         }
     }
 

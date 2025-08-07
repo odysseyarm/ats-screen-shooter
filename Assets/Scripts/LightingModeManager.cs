@@ -18,13 +18,17 @@ public class LightingModeManager : MonoBehaviour
     
     [Header("Settings")]
     [SerializeField] private LightingMode currentMode = LightingMode.Normal;
-    [SerializeField] private float darkModeAmbientIntensity = 0.01f; // Much darker
+    [SerializeField] private float darkModeAmbientIntensity = 0.02f;
     [SerializeField] private float normalModeAmbientIntensity = 1f;
-    [SerializeField] private Color darkModeAmbientColor = new Color(0.01f, 0.01f, 0.015f); // Nearly black with slight blue tint
+    [SerializeField] private Color darkModeAmbientColor = new Color(0.012f, 0.012f, 0.018f); // Near black with hint of blue
     [SerializeField] private Color normalModeAmbientColor = Color.white;
+    [SerializeField] private float darkModeLightIntensityMultiplier = 0.025f; // Lights at 2.5% intensity in dark mode
     
     [Header("References")]
     [SerializeField] private FlashlightController flashlightController;
+    
+    [Header("Target Materials")]
+    [SerializeField] private Material b27TargetMaterial; // Drag B27TargetMaterial here in Inspector
     
     private List<Light> sceneLights = new List<Light>();
     private Dictionary<Light, float> originalIntensities = new Dictionary<Light, float>();
@@ -42,32 +46,43 @@ public class LightingModeManager : MonoBehaviour
     {
         if (flashlightController == null)
         {
-            GameObject flashlightObj = new GameObject("FlashlightSystem");
-            flashlightController = flashlightObj.AddComponent<FlashlightController>();
+            Debug.LogError("LightingModeManager: FlashlightController not assigned! Please assign it in the Inspector.");
         }
         
         StoreOriginalLightingSettings();
         FindSceneLights();
     }
     
+    void OnDestroy()
+    {
+        // Reset material to white when exiting play mode or destroying the manager
+        if (b27TargetMaterial != null)
+        {
+            b27TargetMaterial.SetColor("_BaseColor", Color.white);
+            b27TargetMaterial.SetColor("_Color", Color.white);
+        }
+    }
+    
     
     void Start()
     {
-        GameObject projectionCamera = GameObject.Find("ProjectionPlaneCamera");
-        if (projectionCamera != null)
+        if (flashlightController != null)
         {
-            flashlightController.AttachToTransform(projectionCamera.transform);
-        }
-        else
-        {
-            Camera mainCam = Camera.main;
-            if (mainCam != null)
+            GameObject projectionCamera = GameObject.Find("ProjectionPlaneCamera");
+            if (projectionCamera != null)
             {
-                flashlightController.AttachToTransform(mainCam.transform);
+                flashlightController.AttachToTransform(projectionCamera.transform);
+            }
+            else
+            {
+                Camera mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    flashlightController.AttachToTransform(mainCam.transform);
+                }
             }
         }
         
-        // Check for Gaia Scene Lighting
         CheckForGaiaSceneLighting();
         
         // Always attempt to restore the persisted lighting mode after scene load
@@ -86,21 +101,17 @@ public class LightingModeManager : MonoBehaviour
     
     private void CheckForGaiaSceneLighting()
     {
-        // Try to get Gaia Global instance which contains the scene profile
         GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
         if (gaiaGlobal != null && gaiaGlobal.SceneProfile != null)
         {
             gaiaSceneProfile = gaiaGlobal.SceneProfile;
             
-            // If lighting profiles list is empty, try to find and load the lighting profile
             if (gaiaSceneProfile.m_lightingProfiles == null || gaiaSceneProfile.m_lightingProfiles.Count == 0)
             {
                 
-                // Try to find the Gaia Lighting System Profile asset
                 var lightingProfiles = UnityEngine.Resources.FindObjectsOfTypeAll<GaiaLightingProfile>();
                 GaiaLightingProfile lightingProfile = null;
                 
-                // Look for the main Gaia Lighting System Profile
                 foreach (var profile in lightingProfiles)
                 {
                     if (profile.name.Contains("Gaia Lighting System Profile"))
@@ -110,14 +121,12 @@ public class LightingModeManager : MonoBehaviour
                     }
                 }
                 
-                // If not found by name, just use the first one found
                 if (lightingProfile == null && lightingProfiles.Length > 0)
                 {
                     lightingProfile = lightingProfiles[0];
                 }
                 
                 #if UNITY_EDITOR
-                // In editor, try loading from asset database
                 if (lightingProfile == null)
                 {
                     lightingProfile = UnityEditor.AssetDatabase.LoadAssetAtPath<GaiaLightingProfile>("Assets/Procedural Worlds/Gaia/Lighting/Gaia Lighting System Profile.asset");
@@ -133,11 +142,9 @@ public class LightingModeManager : MonoBehaviour
             
             originalLightingProfileIndex = gaiaSceneProfile.m_selectedLightingProfileValuesIndex;
             
-            // Reset indices
             dayProfileIndex = -1;
             nightProfileIndex = -1;
             
-            // Find Day and Night profile indices by name
             for (int i = 0; i < gaiaSceneProfile.m_lightingProfiles.Count; i++)
             {
                 var profile = gaiaSceneProfile.m_lightingProfiles[i];
@@ -185,13 +192,16 @@ public class LightingModeManager : MonoBehaviour
     
     public void ToggleLightingMode()
     {
-        SetLightingMode(currentMode == LightingMode.Normal ? LightingMode.Dark : LightingMode.Normal);
+        var newMode = currentMode == LightingMode.Normal ? LightingMode.Dark : LightingMode.Normal;
+        SetLightingMode(newMode);
     }
     
     public void SetLightingMode(LightingMode mode)
     {
+        Debug.Log($"LightingModeManager: Dark Mode {(mode == LightingMode.Dark ? "ON" : "OFF")}");
+        
         currentMode = mode;
-        persistedMode = mode;  // Save to static variable for persistence
+        persistedMode = mode; 
         
         switch (mode)
         {
@@ -202,15 +212,16 @@ public class LightingModeManager : MonoBehaviour
                 SetDarkLighting();
                 break;
         }
+        
+        // This is necessary b/c URP is not handling extremely bright lights applied to the target surface well, so we make the surface darker when dark mode is enabled so it looks "correct" when illuminated.
+        UpdateTargetMaterial(mode);
     }
     
     private System.Collections.IEnumerator RestorePersistedMode()
     {
-        // Wait for end of frame to ensure scene is loaded
         yield return new WaitForEndOfFrame();
         
-        // Wait for Gaia to be fully initialized
-        int maxAttempts = 50; // 5 seconds max wait
+        int maxAttempts = 50;
         int attempts = 0;
         
         while (attempts < maxAttempts)
@@ -218,7 +229,6 @@ public class LightingModeManager : MonoBehaviour
             GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
             if (gaiaGlobal != null && gaiaGlobal.SceneProfile != null)
             {
-                // Gaia is ready, wait a bit more for skybox initialization
                 yield return new WaitForSeconds(0.5f);
                 break;
             }
@@ -226,52 +236,45 @@ public class LightingModeManager : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
         
-        // Force re-check for Gaia since it might have initialized after our Start
+        if (attempts >= maxAttempts)
+        {
+            Debug.LogWarning($"LightingModeManager: Gaia initialization timeout after {maxAttempts} attempts");
+        }
+        
         CheckForGaiaSceneLighting();
         
         // Wait for Gaia to fully apply its default profile first
         yield return new WaitForSeconds(0.5f);
-        
-        // Now restore the persisted mode
         SetLightingMode(persistedMode);
         
-        // Force a complete skybox refresh if in dark mode
         if (persistedMode == LightingMode.Dark && nightProfileIndex >= 0)
         {
             yield return new WaitForSeconds(0.5f);
             
-            // Force multiple update attempts to ensure skybox is applied
             for (int i = 0; i < 3; i++)
             {
-                // Force Gaia to fully reload the profile
                 ForceGaiaProfileReload(nightProfileIndex);
                 
                 yield return new WaitForSeconds(0.2f);
                 
-                // Force apply skybox settings again
                 ApplySkyboxFromProfile(nightProfileIndex);
                 
-                // Check if skybox was applied correctly
                 if (RenderSettings.skybox != null)
                 {
                     Material skybox = RenderSettings.skybox;
-                    // Force skybox to update by temporarily setting to null
                     RenderSettings.skybox = null;
                     yield return null;
                     RenderSettings.skybox = skybox;
                     
-                    // Force the skybox material to refresh its properties
                     if (skybox.HasProperty("_Exposure"))
                     {
                         float currentExposure = skybox.GetFloat("_Exposure");
                         if (currentExposure != gaiaSceneProfile.m_lightingProfiles[nightProfileIndex].m_skyboxExposure)
                         {
-                            // Try applying again if it didn't stick
                             ApplySkyboxFromProfile(nightProfileIndex);
                         }
                         else
                         {
-                            // Success, break out of retry loop
                             break;
                         }
                     }
@@ -296,26 +299,20 @@ public class LightingModeManager : MonoBehaviour
         RenderSettings.ambientLight = normalModeAmbientColor;
         RenderSettings.ambientIntensity = normalModeAmbientIntensity;
         
-        // Restore Gaia lighting profile to original or Day
         if (gaiaSceneProfile != null && dayProfileIndex >= 0)
         {
-            // Use original profile if it wasn't night, otherwise use day
             int targetProfile = (originalLightingProfileIndex != nightProfileIndex) ? originalLightingProfileIndex : dayProfileIndex;
             gaiaSceneProfile.m_selectedLightingProfileValuesIndex = targetProfile;
             
-            // Force update of Gaia lighting
             GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
             if (gaiaGlobal != null)
             {
                 gaiaGlobal.UpdateGaiaTimeOfDay(false);
             }
             
-            // Manually update skybox if needed
             ApplySkyboxFromProfile(targetProfile);
-            
         }
         
-        // Always disable flashlight in normal mode
         if (flashlightController != null)
         {
             flashlightController.SetFlashlightEnabled(false);
@@ -326,24 +323,21 @@ public class LightingModeManager : MonoBehaviour
     {
         foreach (Light light in sceneLights)
         {
-            if (light != null)
+            if (light != null && originalIntensities.ContainsKey(light))
             {
-                light.intensity = 0f;
-                light.enabled = false;
+                light.intensity = originalIntensities[light] * darkModeLightIntensityMultiplier;
+                light.enabled = true;
             }
         }
         
         RenderSettings.ambientLight = darkModeAmbientColor;
         RenderSettings.ambientIntensity = darkModeAmbientIntensity;
         
-        // Set Gaia lighting profile to Night
         if (gaiaSceneProfile != null && nightProfileIndex >= 0)
         {
-            // First check if we need to refresh the Gaia reference
             GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
             if (gaiaGlobal != null && gaiaGlobal.SceneProfile != null)
             {
-                // Re-check for Gaia profiles if needed
                 if (gaiaSceneProfile != gaiaGlobal.SceneProfile)
                 {
                     CheckForGaiaSceneLighting();
@@ -352,39 +346,30 @@ public class LightingModeManager : MonoBehaviour
             
             if (nightProfileIndex >= 0 && gaiaSceneProfile != null)
             {
-                // Get the night profile
                 GaiaLightingProfileValues nightProfile = gaiaSceneProfile.m_lightingProfiles[nightProfileIndex];
                 
                 gaiaSceneProfile.m_selectedLightingProfileValuesIndex = nightProfileIndex;
                 
-                // Force update of Gaia lighting
                 if (gaiaGlobal != null)
                 {
                     gaiaGlobal.UpdateGaiaTimeOfDay(false);
                     
-                    // Try to force time of day update if Gaia supports it
                     if (gaiaSceneProfile.m_gaiaTimeOfDay != null)
                     {
-                        // Force night time
                         gaiaSceneProfile.m_gaiaTimeOfDay.m_todHour = 1;
                         gaiaSceneProfile.m_gaiaTimeOfDay.m_todMinutes = 0;
                         gaiaGlobal.UpdateGaiaTimeOfDay(false);
                     }
                 }
                 
-                // Force reload the profile to ensure it's applied
                 ForceGaiaProfileReload(nightProfileIndex);
                 
-                // Apply skybox properties directly without creating new materials
                 if (nightProfile != null)
                 {
-                    // Apply skybox properties to the existing material
                     ApplySkyboxFromProfile(nightProfileIndex);
                     
-                    // Force Unity to refresh the skybox by triggering a small change
                     if (RenderSettings.skybox != null)
                     {
-                        // Save reference and force update
                         Material skybox = RenderSettings.skybox;
                         RenderSettings.skybox = null;
                         RenderSettings.skybox = skybox;
@@ -393,21 +378,20 @@ public class LightingModeManager : MonoBehaviour
             }
         }
         
-        // Force even darker settings after Gaia profile is applied
         RenderSettings.ambientLight = darkModeAmbientColor;
         RenderSettings.ambientIntensity = darkModeAmbientIntensity;
-        RenderSettings.ambientSkyColor = darkModeAmbientColor;
-        RenderSettings.ambientEquatorColor = darkModeAmbientColor * 0.5f;
-        RenderSettings.ambientGroundColor = Color.black;
+        RenderSettings.ambientSkyColor = darkModeAmbientColor * 1.05f; // Barely any sky brightness
+        RenderSettings.ambientEquatorColor = darkModeAmbientColor * 1.1f; // Minimal horizon glow
+        RenderSettings.ambientGroundColor = darkModeAmbientColor * 0.1f; // Almost no ground reflection;
         
-        // Make fog darker too
-        RenderSettings.fogColor = new Color(0.01f, 0.01f, 0.02f);
-        
-        // Only enable flashlight in OutdoorRange scene
         if (flashlightController != null)
         {
             string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
             bool enableFlashlight = (currentSceneName == "OutdoorRange");
+            if (enableFlashlight)
+            {
+                Debug.Log("LightingModeManager: Flashlight ON");
+            }
             flashlightController.SetFlashlightEnabled(enableFlashlight);
         }
     }
@@ -425,9 +409,10 @@ public class LightingModeManager : MonoBehaviour
     private void ForceGaiaProfileReload(int profileIndex)
     {
         if (gaiaSceneProfile == null || profileIndex < 0)
+        {
             return;
+        }
             
-        // Force Gaia to reload by switching to a different profile and back
         int tempIndex = (profileIndex == 0) ? 1 : 0;
         if (tempIndex < gaiaSceneProfile.m_lightingProfiles.Count)
         {
@@ -439,7 +424,6 @@ public class LightingModeManager : MonoBehaviour
             }
         }
         
-        // Now switch to the target profile
         gaiaSceneProfile.m_selectedLightingProfileValuesIndex = profileIndex;
         if (GaiaGlobal.Instance != null)
         {
@@ -450,13 +434,14 @@ public class LightingModeManager : MonoBehaviour
     private void ApplySkyboxFromProfile(int profileIndex)
     {
         if (gaiaSceneProfile == null || profileIndex < 0 || profileIndex >= gaiaSceneProfile.m_lightingProfiles.Count)
+        {
             return;
+        }
             
         GaiaLightingProfileValues profile = gaiaSceneProfile.m_lightingProfiles[profileIndex];
         if (profile == null)
             return;
             
-        // Apply skybox settings directly to RenderSettings
         Material skyboxMat = RenderSettings.skybox;
         if (skyboxMat != null)
         {
@@ -514,31 +499,34 @@ public class LightingModeManager : MonoBehaviour
             if (skyboxMat.HasProperty("_GroundColor"))
                 skyboxMat.SetColor("_GroundColor", profile.m_groundColor);
             
-            // Force skybox to update
             skyboxMat.SetFloat("_UpdateTrigger", Random.Range(0f, 1f));
             
-            // Force dynamic GI update
             DynamicGI.UpdateEnvironment();
         }
         
-        // Also update ambient settings from the profile
         RenderSettings.ambientMode = profile.m_ambientMode;
         RenderSettings.ambientIntensity = profile.m_ambientIntensity;
         RenderSettings.ambientSkyColor = profile.m_skyAmbient;
         RenderSettings.ambientEquatorColor = profile.m_equatorAmbient;
         RenderSettings.ambientGroundColor = profile.m_groundAmbient;
-        
-        // Update fog settings
-        RenderSettings.fogColor = profile.m_fogColor;
-        RenderSettings.fogMode = profile.m_fogMode;
-        if (profile.m_fogMode == FogMode.Linear)
+    }
+    
+    private void UpdateTargetMaterial(LightingMode mode)
+    {
+        if (b27TargetMaterial == null)
         {
-            RenderSettings.fogStartDistance = profile.m_fogStartDistance;
-            RenderSettings.fogEndDistance = profile.m_fogEndDistance;
+            return;
+        }
+        
+        if (mode == LightingMode.Dark)
+        {
+            b27TargetMaterial.SetColor("_BaseColor", new Color(0.65f, 0.65f, 0.65f, 1f));
+            b27TargetMaterial.SetColor("_Color", new Color(0.65f, 0.65f, 0.65f, 1f));
         }
         else
         {
-            RenderSettings.fogDensity = profile.m_fogDensity;
+            b27TargetMaterial.SetColor("_BaseColor", Color.white);
+            b27TargetMaterial.SetColor("_Color", Color.white);
         }
     }
 }
