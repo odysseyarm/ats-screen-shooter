@@ -33147,6 +33147,12 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1473345373}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1397936762 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4374923252112158230, guid: dd2172799ca7b214cb10185e5cd33e59,
+    type: 3}
+  m_PrefabInstance: {fileID: 1473345373}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1438593257
 GameObject:
   m_ObjectHideFlags: 0
@@ -37067,6 +37073,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3346510236571467050, guid: 97218c6c6b5a58e4cb094e4e276d2cfb,
+        type: 3}
+      propertyPath: BulletHoleParent
+      value: 
+      objectReference: {fileID: 1397936762}
     - target: {fileID: 3452661963917513011, guid: 97218c6c6b5a58e4cb094e4e276d2cfb,
         type: 3}
       propertyPath: m_Name
