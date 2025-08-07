@@ -207,6 +207,15 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DebugShot"",
+                    ""type"": ""Button"",
+                    ""id"": ""b2c3d4e5-f6a7-8901-bcde-f12345678901"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -251,6 +260,17 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
                     ""action"": ""ToggleDarkMode"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d7e8f9a0-b1c2-d3e4-f5a6-b7c8d9e0f1a2"",
+                    ""path"": ""<Keyboard>/period"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""DebugShot"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -1388,6 +1408,7 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
         m_Player_ToggleCrosshair = m_Player.FindAction("ToggleCrosshair", throwIfNotFound: true);
         m_Player_ToggleZeroTarget = m_Player.FindAction("ToggleZeroTarget", throwIfNotFound: true);
         m_Player_ToggleDarkMode = m_Player.FindAction("ToggleDarkMode", throwIfNotFound: true);
+        m_Player_DebugShot = m_Player.FindAction("DebugShot", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1502,6 +1523,7 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_ToggleCrosshair;
     private readonly InputAction m_Player_ToggleZeroTarget;
     private readonly InputAction m_Player_ToggleDarkMode;
+    private readonly InputAction m_Player_DebugShot;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1565,6 +1587,10 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/ToggleDarkMode".
         /// </summary>
         public InputAction @ToggleDarkMode => m_Wrapper.m_Player_ToggleDarkMode;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DebugShot".
+        /// </summary>
+        public InputAction @DebugShot => m_Wrapper.m_Player_DebugShot;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1630,6 +1656,9 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
             @ToggleDarkMode.started += instance.OnToggleDarkMode;
             @ToggleDarkMode.performed += instance.OnToggleDarkMode;
             @ToggleDarkMode.canceled += instance.OnToggleDarkMode;
+            @DebugShot.started += instance.OnDebugShot;
+            @DebugShot.performed += instance.OnDebugShot;
+            @DebugShot.canceled += instance.OnDebugShot;
         }
 
         /// <summary>
@@ -1680,6 +1709,9 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
             @ToggleDarkMode.started -= instance.OnToggleDarkMode;
             @ToggleDarkMode.performed -= instance.OnToggleDarkMode;
             @ToggleDarkMode.canceled -= instance.OnToggleDarkMode;
+            @DebugShot.started -= instance.OnDebugShot;
+            @DebugShot.performed -= instance.OnDebugShot;
+            @DebugShot.canceled -= instance.OnDebugShot;
         }
 
         /// <summary>
@@ -2211,6 +2243,13 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnToggleDarkMode(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DebugShot" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDebugShot(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

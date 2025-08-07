@@ -18,7 +18,7 @@ public class InputHandlers : TrackerBase
     private ProjectionPlane projectionPlane;
 
     [SerializeField]
-    private InputActionReference reset, togglech, togglezerotarget, toggledarkmode;
+    private InputActionReference reset, togglech, togglezerotarget, toggledarkmode, debugshot;
 
     [SerializeField]
     private Canvas crosshairCanvas;
@@ -64,6 +64,11 @@ public class InputHandlers : TrackerBase
         reset.action.Enable();
         togglech.action.Enable();
         togglezerotarget.action.Enable();
+        if (debugshot != null)
+        {
+            debugshot.action.Enable();
+            debugshot.action.performed += PerformDebugShot;
+        }
         
         reset.action.performed += PerformReset;
         togglech.action.performed += ToggleCrosshairs;
@@ -75,6 +80,11 @@ public class InputHandlers : TrackerBase
         reset.action.performed -= PerformReset;
         togglech.action.performed -= ToggleCrosshairs;
         togglezerotarget.action.performed -= ToggleZeroTarget;
+        if (debugshot != null)
+        {
+            debugshot.action.performed -= PerformDebugShot;
+            debugshot.action.Disable();
+        }
         
         // Disable all the actions
         reset.action.Disable();
@@ -169,6 +179,36 @@ public class InputHandlers : TrackerBase
         PerformReset();
     }
 
+    private void PerformDebugShot(InputAction.CallbackContext obj)
+    {
+        // Get the first connected player's current aim point
+        Player activePlayer = null;
+        foreach (var (_, player) in players)
+        {
+            if (player != null && player.point != Vector2.zero)
+            {
+                activePlayer = player;
+                break;
+            }
+        }
+        
+        if (activePlayer != null)
+        {
+            // Use the gun's current aim point (normalized coordinates)
+            Vector2 screenPointNormal = activePlayer.point;
+            Vector2 screenPoint = new Vector2(screenPointNormal.x * Screen.width, Screen.height - screenPointNormal.y * Screen.height);
+            screenShooter.CreateShot(screenPoint);
+            Debug.Log($"Debug shot created at gun aim position: ({screenPoint.x}, {screenPoint.y})");
+        }
+        else
+        {
+            // Fallback to center if no gun is connected
+            Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            screenShooter.CreateShot(screenCenter);
+            Debug.Log($"No gun connected - debug shot created at screen center: ({screenCenter.x}, {screenCenter.y})");
+        }
+    }
+
     // private void PerformResetZero(InputAction.CallbackContext obj)
     // {
     //     if (client.isConnected()) {
@@ -237,12 +277,23 @@ public class InputHandlers : TrackerBase
         screenShooter = GetComponent<ScreenShooter>();
         appConfig.Load();
         
-        if (toggledarkmode == null || toggledarkmode.action == null)
+        if (toggledarkmode == null || toggledarkmode.action == null || debugshot == null || debugshot.action == null)
         {
-            appControls = new AppControls();
-            appControls.Player.Enable();
+            if (appControls == null)
+            {
+                appControls = new AppControls();
+                appControls.Player.Enable();
+            }
             
-            appControls.Player.ToggleDarkMode.performed += ToggleDarkMode;
+            if (toggledarkmode == null || toggledarkmode.action == null)
+            {
+                appControls.Player.ToggleDarkMode.performed += ToggleDarkMode;
+            }
+            
+            if (debugshot == null || debugshot.action == null)
+            {
+                appControls.Player.DebugShot.performed += PerformDebugShot;
+            }
         }
         
         lightingModeManager = FindObjectOfType<LightingModeManager>();
