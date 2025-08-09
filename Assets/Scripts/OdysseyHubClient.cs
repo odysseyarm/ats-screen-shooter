@@ -46,7 +46,6 @@ public class OdysseyHubClient : MonoBehaviour
             foreach (var device in devices) {
                 await inputHandlers.DeviceConnected(device);
             }
-            screenGUI.Refresh();
         }
 
 #nullable enable
@@ -72,11 +71,9 @@ public class OdysseyHubClient : MonoBehaviour
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ConnectEvent _:
                                     _ = Task.Run(async () => { await inputHandlers.DeviceConnected(deviceEvent.v1.device); });
-                                    screenGUI.Refresh();
                                     break;
                                 case ohc.uniffi.DeviceEventKind.DisconnectEvent _:
                                     inputHandlers.DeviceDisconnected(deviceEvent.v1.device);
-                                    screenGUI.Refresh();
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ZeroResult zeroResult:
                                     if (zeroResult.v1) {
