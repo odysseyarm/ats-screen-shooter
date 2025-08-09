@@ -52,7 +52,7 @@ public class OdysseyHubClient : MonoBehaviour
 #nullable enable
         Channel<(ohc.uniffi.Event?, ohc.uniffi.ClientException?)> eventChannel = Channel.CreateUnbounded<(ohc.uniffi.Event?, ohc.uniffi.ClientException?)>();
 #nullable disable
-        await Task.Factory.StartNew(async () => await client.RunStream(eventChannel.Writer), TaskCreationOptions.LongRunning);
+        await Task.Factory.StartNew(async () => await client.SubscribeEvents(eventChannel.Writer), TaskCreationOptions.LongRunning);
 
         try {
             await foreach ((var @event, var err) in eventChannel.Reader.ReadAllAsync(cancellationTokenSource.Token)) {

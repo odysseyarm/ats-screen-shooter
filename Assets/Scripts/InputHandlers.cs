@@ -1,4 +1,5 @@
 using Apt.Unity.Projection;
+using PimDeWitte.UnityMainThreadDispatcher;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -187,19 +188,29 @@ public class InputHandlers : TrackerBase
     }
 
     public async Task DeviceConnected(ohc.uniffi.DeviceRecord device) {
-        var player = new Player();
-        player.device = device;
-        player.point = new Vector2(-1, -1);
-        player.shotDelayMS = await client.client.GetShotDelay(device);
-        player.trackingHistory = new ohc.uniffi.TrackingHistory(100);
-        var index = players.Allocate(player);
-        var i = index > crosshairTextures.Length ? crosshairTextures.Length - 1 : index;
-        player.crosshair = new GameObject("CrosshairPlayer" + index).AddComponent<Image>();
-        player.crosshair.transform.SetParent(crosshairCanvas.transform, false);
-        player.crosshair.GetComponent<Image>().sprite = Sprite.Create(crosshairTextures[i], new Rect(0, 0, crosshairTextures[i].width, crosshairTextures[i].height), new Vector2(0.5f, 0.5f), 1.0f);
+        try {
+            var shotDelayMS = await client.client.GetShotDelay(device);
+            await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
+                var player = new Player();
+                player.device = device;
+                player.point = new Vector2(-1, -1);
+                player.shotDelayMS = shotDelayMS;
+                player.trackingHistory = new ohc.uniffi.TrackingHistory(100);
+                var index = players.Allocate(player);
+                var i = (index >= crosshairTextures.Length) ? crosshairTextures.Length - 1 : index;
+                player.crosshair = new GameObject("CrosshairPlayer" + index).AddComponent<Image>();
+                player.crosshair.transform.SetParent(crosshairCanvas.transform, false);
+                player.crosshair.GetComponent<Image>().sprite = Sprite.Create(crosshairTextures[i], new Rect(0, 0, crosshairTextures[i].width, crosshairTextures[i].height), new Vector2(0.5f, 0.5f), 1.0f);
+            });
+        } catch (Exception e) {
+            Debug.LogError("Error: " + e.Message);
+        }
     }
 
-    public void DeviceDisconnected(ohc.uniffi.DeviceRecord deviceR) {
+    public async void DeviceDisconnected(ohc.uniffi.DeviceRecord deviceR) {
+        await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
+            Destroy(players.Find(p => p.device == deviceR).crosshair.gameObject);
+        });
         players.RemoveWhere(p => p.device == deviceR);
     }
 
