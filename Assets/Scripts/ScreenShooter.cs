@@ -19,6 +19,13 @@ public class ScreenShooter : MonoBehaviour
         RaycastHit hit;
 
         if (Physics.Raycast(ray, out hit)) {
+            // Check if we hit a ReactiveTarget
+            ReactiveTarget target = hit.collider.GetComponentInParent<ReactiveTarget>();
+            if (target != null)
+            {
+                target.OnHit(hit.point, hit.normal);
+            }
+            
             // Use BulletHoleParent if set, otherwise use the pool
             Transform parentTransform = BulletHoleParent != null ? BulletHoleParent : bulletHolePool.transform;
             
