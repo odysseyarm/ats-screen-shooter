@@ -1342,43 +1342,6 @@ MonoBehaviour:
   m_drawWorldDesignerRulers: 1
   m_drawWorldDesignerDensityViz: 0
   m_autoStampDensityVisualizationTimeStamp: 0
---- !u!84 &323077417
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 48
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 0
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &335637416
 GameObject:
   m_ObjectHideFlags: 0
@@ -2317,7 +2280,7 @@ MonoBehaviour:
   normalModeAmbientColor: {r: 1, g: 1, b: 1, a: 1}
   darkModeLightIntensityMultiplier: 0.025
   flashlightController: {fileID: 1181535446}
-  b27TargetMaterial: {fileID: 2100000, guid: 5e48598057e2b704888d836aadf571ca, type: 2}
+  qualificationModeManager: {fileID: 0}
 --- !u!4 &401994587
 Transform:
   m_ObjectHideFlags: 0
@@ -7794,6 +7757,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 801393222}
+  - component: {fileID: 801393223}
   m_Layer: 0
   m_Name: QualificationMode
   m_TagString: Untagged
@@ -7817,6 +7781,23 @@ Transform:
   - {fileID: 779236019}
   m_Father: {fileID: 994010954}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &801393223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 801393221}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01610f65e42b5b047b2aee775dff5ae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  b27Targets: []
+  b27TargetMaterialDay: {fileID: 2100000, guid: 5e48598057e2b704888d836aadf571ca,
+    type: 2}
+  b27TargetMaterialNight: {fileID: 2100000, guid: 9d0b3af5f1ee5ba4c90d4d8eca9b942c,
+    type: 2}
 --- !u!1 &823055429
 GameObject:
   m_ObjectHideFlags: 0
@@ -11122,6 +11103,12 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   mountOffset: {x: 0.1, y: -0.15, z: 0.3}
+  responsiveDistanceEnabled: 1
+  distanceScalingRatio: 1.5
+  baseZPosition: 0
+  minZPosition: -10
+  maxZPosition: 10
+  smoothingFactor: 0
   flashlightLight: {fileID: 0}
 --- !u!4 &1181535447
 Transform:
@@ -35121,7 +35108,7 @@ MonoBehaviour:
     - 0
     m_textureResolution: 512
   m_gameCamera: {fileID: 973326033}
-  m_reflectionTexture: {fileID: 323077417}
+  m_reflectionTexture: {fileID: 2135496160}
   m_distances:
   - 500
   - 500
@@ -39418,6 +39405,43 @@ MonoBehaviour:
   m_minRefreshMS: 100
   m_maxRefreshMS: 5000
   m_followTransform: 1
+--- !u!84 &2135496160
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 48
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 0
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &2146606174
 GameObject:
   m_ObjectHideFlags: 0

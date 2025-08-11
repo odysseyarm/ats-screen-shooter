@@ -27,8 +27,8 @@ public class LightingModeManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private FlashlightController flashlightController;
     
-    [Header("Target Materials")]
-    [SerializeField] private Material b27TargetMaterial; // Drag B27TargetMaterial here in Inspector
+    [Header("Managers")]
+    [SerializeField] private QualificationModeManager qualificationModeManager;
     
     private List<Light> sceneLights = new List<Light>();
     private Dictionary<Light, float> originalIntensities = new Dictionary<Light, float>();
@@ -55,12 +55,7 @@ public class LightingModeManager : MonoBehaviour
     
     void OnDestroy()
     {
-        // Reset material to white when exiting play mode or destroying the manager
-        if (b27TargetMaterial != null)
-        {
-            b27TargetMaterial.SetColor("_BaseColor", Color.white);
-            b27TargetMaterial.SetColor("_Color", Color.white);
-        }
+        // Cleanup handled by QualificationModeManager
     }
     
     
@@ -213,8 +208,8 @@ public class LightingModeManager : MonoBehaviour
                 break;
         }
         
-        // This is necessary b/c URP is not handling extremely bright lights applied to the target surface well, so we make the surface darker when dark mode is enabled so it looks "correct" when illuminated.
-        UpdateTargetMaterial(mode);
+        // Update target materials through QualificationModeManager
+        UpdateTargetMaterials(mode);
     }
     
     private System.Collections.IEnumerator RestorePersistedMode()
@@ -511,22 +506,28 @@ public class LightingModeManager : MonoBehaviour
         RenderSettings.ambientGroundColor = profile.m_groundAmbient;
     }
     
-    private void UpdateTargetMaterial(LightingMode mode)
+    private void UpdateTargetMaterials(LightingMode mode)
     {
-        if (b27TargetMaterial == null)
+        // Update B27 target materials through QualificationModeManager
+        if (qualificationModeManager == null)
         {
-            return;
+            qualificationModeManager = FindObjectOfType<QualificationModeManager>();
         }
         
-        if (mode == LightingMode.Dark)
+        if (qualificationModeManager != null)
         {
-            b27TargetMaterial.SetColor("_BaseColor", new Color(0.65f, 0.65f, 0.65f, 1f));
-            b27TargetMaterial.SetColor("_Color", new Color(0.65f, 0.65f, 0.65f, 1f));
+            qualificationModeManager.UpdateTargetMaterials(mode == LightingMode.Dark);
         }
         else
         {
-            b27TargetMaterial.SetColor("_BaseColor", Color.white);
-            b27TargetMaterial.SetColor("_Color", Color.white);
+            Debug.LogWarning("LightingModeManager: QualificationModeManager not found!");
+        }
+        
+        // Also update any ReactiveTargets in the scene
+        ReactiveTarget[] reactiveTargets = FindObjectsOfType<ReactiveTarget>();
+        foreach (var target in reactiveTargets)
+        {
+            target.RefreshMaterial();
         }
     }
 }

@@ -14,6 +14,32 @@ public class FlashlightController : MonoBehaviour
     [Header("Mounting Position")]
     [SerializeField] private Vector3 mountOffset = new Vector3(0.1f, -0.15f, 0.3f);
     
+    [Header("Responsive Distance Settings")]
+    [SerializeField]
+    [Tooltip("Enable/disable the responsive distance feature for flashlight GameObject movement")]
+    private bool responsiveDistanceEnabled = true;
+    
+    [SerializeField]
+    [Tooltip("Distance scaling ratio - for every 1 unit of tracking distance, move flashlight GameObject this many units on Z")]
+    private float distanceScalingRatio = 1.0f;
+    
+    [SerializeField]
+    [Tooltip("The base Z position when tracking distance is zero")]
+    private float baseZPosition = 0f;
+    
+    [SerializeField]
+    [Tooltip("Minimum Z position")]
+    private float minZPosition = -10f;
+    
+    [SerializeField]
+    [Tooltip("Maximum Z position")]
+    private float maxZPosition = 10f;
+    
+    [SerializeField]
+    [Tooltip("Smoothing factor for position changes (0 = instant, 1 = no movement)")]
+    [Range(0f, 0.99f)]
+    private float smoothingFactor = 0.3f;
+    
     [Header("References")]
     [SerializeField] private Light flashlightLight;
     
@@ -21,6 +47,10 @@ public class FlashlightController : MonoBehaviour
     private Transform attachmentPoint;
     private Camera targetCamera;
     private InputHandlers inputHandlers;
+    private Vector3 targetPosition;
+    private Vector3 currentVelocity;
+    private float lastTrackedDistance = 0f;
+    private Vector3 initialLocalPosition;
     
     void Awake()
     {
@@ -36,6 +66,15 @@ public class FlashlightController : MonoBehaviour
     {
         inputHandlers = FindObjectOfType<InputHandlers>();
         
+        if (inputHandlers == null)
+        {
+            Debug.LogError("[FlashlightController] InputHandlers not found! Responsive distance will not work.");
+        }
+        else
+        {
+            Debug.Log($"[FlashlightController] InputHandlers found. Responsive Distance is {(responsiveDistanceEnabled ? "ENABLED" : "DISABLED")}");
+        }
+        
         GameObject projectionCamera = GameObject.Find("ProjectionPlaneCamera");
         if (projectionCamera != null)
         {
@@ -45,10 +84,71 @@ public class FlashlightController : MonoBehaviour
         {
             targetCamera = Camera.main;
         }
+        
+        // Store initial position and set up target position
+        initialLocalPosition = transform.localPosition;
+        targetPosition = transform.position;
+        targetPosition.z = baseZPosition;
+        
+        Debug.Log($"[FlashlightController] Initialized with:" +
+            $"\n  GameObject Name: {gameObject.name}" +
+            $"\n  Initial Position: {transform.position}" +
+            $"\n  Base Z Position: {baseZPosition}" +
+            $"\n  Scaling Ratio: {distanceScalingRatio}" +
+            $"\n  Min/Max Z: [{minZPosition}, {maxZPosition}]");
     }
     
     void Update()
     {
+        // Update GameObject position based on responsive distance
+        if (responsiveDistanceEnabled && inputHandlers != null)
+        {
+            // Keep X and Y aligned with camera, only move Z
+            if (targetCamera != null)
+            {
+                targetPosition.x = targetCamera.transform.position.x;
+                targetPosition.y = targetCamera.transform.position.y;
+            }
+            
+            if (inputHandlers.IsTracking)
+            {
+                float currentDistance = GetCurrentTrackingDistance();
+                
+                if (Mathf.Abs(currentDistance - lastTrackedDistance) > 0.001f)
+                {
+                    // Inverted relationship: closer to TV = flashlight GameObject moves farther forward on Z
+                    float newZ = baseZPosition - (currentDistance * distanceScalingRatio);
+                    float unclampedZ = newZ;
+                    targetPosition.z = Mathf.Clamp(newZ, minZPosition, maxZPosition);
+                    lastTrackedDistance = currentDistance;
+                    
+                    Debug.Log($"[FlashlightController] GameObject Movement Update:" +
+                        $"\n  GameObject: {gameObject.name}" +
+                        $"\n  Tracking Distance: {currentDistance:F3}" +
+                        $"\n  Scaling Ratio: {distanceScalingRatio}" +
+                        $"\n  Base Z: {baseZPosition}" +
+                        $"\n  Unclamped Z: {unclampedZ:F3}" +
+                        $"\n  Target Z (clamped): {targetPosition.z:F3}" +
+                        $"\n  Min/Max Z: [{minZPosition}, {maxZPosition}]");
+                }
+            }
+            
+            // Smooth the GameObject position transition
+            Vector3 smoothedPosition = Vector3.SmoothDamp(transform.position, targetPosition, ref currentVelocity, smoothingFactor);
+            transform.position = smoothedPosition;
+            
+            // Log GameObject position every second
+            if (Time.frameCount % 60 == 0)
+            {
+                Debug.Log($"[FlashlightController] GameObject Position:" +
+                    $"\n  Name: {gameObject.name}" +
+                    $"\n  Current Position: {transform.position}" +
+                    $"\n  Target Position: {targetPosition}" +
+                    $"\n  Is Moving: {currentVelocity.magnitude > 0.001f}");
+            }
+        }
+        
+        // Handle flashlight aiming (separate from GameObject movement)
         if (isEnabled && inputHandlers != null && targetCamera != null)
         {
             var players = inputHandlers.Players;
@@ -69,7 +169,9 @@ public class FlashlightController : MonoBehaviour
                         
                         if (flashlightLight != null)
                         {
-                            Vector3 lightPosition = targetCamera.transform.position + 
+                            // Use the GameObject's current position (which moves with responsive distance)
+                            // instead of camera position
+                            Vector3 lightPosition = transform.position + 
                                 targetCamera.transform.right * mountOffset.x +
                                 targetCamera.transform.up * mountOffset.y +
                                 targetCamera.transform.forward * mountOffset.z;
@@ -89,8 +191,16 @@ public class FlashlightController : MonoBehaviour
                             Vector3 aimDirection = (targetPoint - lightPosition).normalized;
                             flashlightLight.transform.rotation = Quaternion.LookRotation(aimDirection);
                             
-                            // Use constant intensity - no dynamic adjustment
                             flashlightLight.intensity = intensity;
+                            
+                            // Log the actual light position vs GameObject position
+                            if (Time.frameCount % 60 == 0)
+                            {
+                                Debug.Log($"[FlashlightController] Light vs GameObject:" +
+                                    $"\n  GameObject ({gameObject.name}) Pos: {transform.position}" +
+                                    $"\n  Light Actual Pos: {flashlightLight.transform.position}" +
+                                    $"\n  Offset from GameObject: {flashlightLight.transform.position - transform.position}");
+                            }
                         }
                         
                         break;
@@ -133,7 +243,10 @@ public class FlashlightController : MonoBehaviour
     
     public void AttachToTransform(Transform target)
     {
+        // Store the attachment point but DON'T parent to it
+        // This allows the flashlight GameObject to move independently
         attachmentPoint = target;
+        Debug.LogWarning($"[FlashlightController] AttachToTransform called but NOT parenting {gameObject.name} to {target.name} to allow independent Z movement");
     }
     
     public void ToggleFlashlight()
@@ -177,5 +290,50 @@ public class FlashlightController : MonoBehaviour
         {
             flashlightLight.range = range;
         }
+    }
+    
+    private float GetCurrentTrackingDistance()
+    {
+        if (inputHandlers == null || !inputHandlers.IsTracking)
+        {
+            return 0f;
+        }
+        
+        Vector3 trackingTranslation = inputHandlers.Translation;
+        float distance = trackingTranslation.z;
+        
+        return Mathf.Abs(distance);
+    }
+    
+    public void SetResponsiveDistanceEnabled(bool enabled)
+    {
+        responsiveDistanceEnabled = enabled;
+        
+        if (!enabled)
+        {
+            // Reset GameObject to base Z position when disabling
+            targetPosition = transform.position;
+            targetPosition.z = baseZPosition;
+            Debug.Log($"[FlashlightController] Responsive Distance Disabled. Resetting {gameObject.name} to Z={baseZPosition}");
+        }
+        else
+        {
+            Debug.Log($"[FlashlightController] Responsive Distance Enabled for {gameObject.name}");
+        }
+    }
+    
+    public bool IsResponsiveDistanceEnabled()
+    {
+        return responsiveDistanceEnabled;
+    }
+    
+    public void SetDistanceScalingRatio(float ratio)
+    {
+        distanceScalingRatio = Mathf.Max(0.1f, ratio);
+    }
+    
+    public float GetDistanceScalingRatio()
+    {
+        return distanceScalingRatio;
     }
 }
