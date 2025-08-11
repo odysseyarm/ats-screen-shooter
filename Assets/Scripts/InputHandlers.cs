@@ -141,10 +141,14 @@ public class InputHandlers : TrackerBase
         player.point = point;
         player.trackingHistory.Push(tracking);
 
+        // Track ANY device (gun or helmet) for position tracking
+        IsTracking = true;
+        translation = zero_translation + unityPose.position;
+
+        // Original helmet check can stay for other purposes if needed
         if (appConfig.Data.helmet_uuids.Any(uuid => uuid == device.uuid))
         {
-            IsTracking = true;
-            translation = zero_translation + unityPose.position;
+            // Helmet-specific logic if needed
         }
     }
 

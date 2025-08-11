@@ -26,15 +26,35 @@ public class ScreenShooter : MonoBehaviour
                 target.OnHit(hit.point, hit.normal);
             }
             
-            // Use BulletHoleParent if set, otherwise use the pool
-            Transform parentTransform = BulletHoleParent != null ? BulletHoleParent : bulletHolePool.transform;
+            // Parent bullet holes to the hit object so they move with it
+            Transform parentTransform = null;
             
-            Instantiate(
-                BulletHole,
-                hit.point + hit.normal * .01f,
-                Quaternion.FromToRotation(Vector3.up, hit.normal),
-                parentTransform
-            );
+            // Check if we hit a target that should be the parent
+            if (hit.collider.name == "Body1" || hit.collider.gameObject.name.Contains("Target"))
+            {
+                // Parent to the actual target object
+                parentTransform = hit.collider.transform;
+            }
+            else if (BulletHoleParent != null)
+            {
+                // Use the manually set parent if available
+                parentTransform = BulletHoleParent;
+            }
+            else
+            {
+                // Fall back to the pool
+                parentTransform = bulletHolePool.transform;
+            }
+            
+            if (BulletHole != null)
+            {
+                Instantiate(
+                    BulletHole,
+                    hit.point + hit.normal * .01f,
+                    Quaternion.FromToRotation(Vector3.up, hit.normal),
+                    parentTransform
+                );
+            }
         }
     }
 
@@ -59,6 +79,7 @@ public class ScreenShooter : MonoBehaviour
     void Start()
     {
         bulletHolePool = new GameObject();
+        bulletHolePool.name = "BulletHolePool";
     }
 
     // Update is called once per frame
