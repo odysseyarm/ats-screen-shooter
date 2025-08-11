@@ -70,6 +70,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentState: 0
+  currentHitPoints: 1
+  requiredHitsToDown: 1
+  colorChangeDelay: 0.5
   targetCollider: {fileID: 8161770308900970030}
   enemyMaterialDay: {fileID: 2100000, guid: babef22ed5337d44080d8d24838a9b37, type: 2}
   friendlyMaterialDay: {fileID: 2100000, guid: a7473ac4e021cc44787c83472ebe0f8f, type: 2}
@@ -240,7 +243,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 7397659539795428015, guid: 6eef47ec43a511a419a8629003b7f9ca, type: 3}
+  - {fileID: 2100000, guid: 51833feea9d4b0845ba58d300e513894, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -327,7 +330,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 7397659539795428015, guid: 6eef47ec43a511a419a8629003b7f9ca, type: 3}
+  - {fileID: 2100000, guid: 51833feea9d4b0845ba58d300e513894, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

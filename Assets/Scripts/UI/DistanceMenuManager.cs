@@ -15,11 +15,16 @@ public class DistanceMenuManager : MonoBehaviour
     public TextMeshProUGUI sevenYardText;
     public TextMeshProUGUI fifteenYardText;
     
+    [Header("Responsive Distance UI")]
+    public Toggle responsiveDistanceToggle;
+    public TextMeshProUGUI responsiveDistanceLabel;
+    
     [Header("Target Reference")]
     public GameObject b27Target;
+    private QualificationTargetController targetController;
     
     [Header("Distance Settings")]
-    [SerializeField] private float threeYardDistance = 3f;
+    [SerializeField] private float threeYardDistance = 5f;
     [SerializeField] private float sevenYardDistance = 7f;
     [SerializeField] private float fifteenYardDistance = 15f;
     
@@ -51,6 +56,25 @@ public class DistanceMenuManager : MonoBehaviour
             }
         }
         
+        // Get the QualificationTargetController if the target exists
+        if (b27Target != null)
+        {
+            targetController = b27Target.GetComponent<QualificationTargetController>();
+            if (targetController == null)
+            {
+                targetController = b27Target.AddComponent<QualificationTargetController>();
+                Debug.Log("DistanceMenuManager: Added QualificationTargetController to target");
+            }
+            
+            // Fix the MeshCollider if it's missing its mesh
+            QualificationTargetMeshFix meshFix = b27Target.GetComponent<QualificationTargetMeshFix>();
+            if (meshFix == null)
+            {
+                meshFix = b27Target.AddComponent<QualificationTargetMeshFix>();
+                Debug.Log("DistanceMenuManager: Added QualificationTargetMeshFix to ensure MeshCollider has mesh");
+            }
+        }
+        
         inputActions = new AppControls();
     }
     
@@ -66,6 +90,24 @@ public class DistanceMenuManager : MonoBehaviour
             
         if (fifteenYardButton != null)
             fifteenYardButton.onClick.AddListener(() => SetTargetDistance(fifteenYardDistance));
+            
+        // Setup responsive distance toggle
+        if (responsiveDistanceToggle != null)
+        {
+            responsiveDistanceToggle.onValueChanged.AddListener(OnResponsiveDistanceToggled);
+            
+            // Set initial state from the target controller
+            if (targetController != null)
+            {
+                responsiveDistanceToggle.isOn = targetController.IsResponsiveDistanceEnabled();
+            }
+        }
+        
+        // Update responsive distance label
+        if (responsiveDistanceLabel != null)
+        {
+            responsiveDistanceLabel.text = "Responsive Distance";
+        }
             
         var keyboard = Keyboard.current;
         if (keyboard != null)
@@ -88,6 +130,9 @@ public class DistanceMenuManager : MonoBehaviour
             
         if (fifteenYardButton != null)
             fifteenYardButton.onClick.RemoveAllListeners();
+            
+        if (responsiveDistanceToggle != null)
+            responsiveDistanceToggle.onValueChanged.RemoveListener(OnResponsiveDistanceToggled);
     }
     
     void Update()
@@ -117,6 +162,17 @@ public class DistanceMenuManager : MonoBehaviour
     {
         if (b27Target != null)
         {
+            // Disable responsive distance when manually setting position
+            if (targetController != null && targetController.IsResponsiveDistanceEnabled())
+            {
+                targetController.SetResponsiveDistanceEnabled(false);
+                if (responsiveDistanceToggle != null)
+                {
+                    responsiveDistanceToggle.isOn = false;
+                }
+                Debug.Log("DistanceMenuManager: Disabled responsive distance for manual positioning");
+            }
+            
             Vector3 currentPosition = b27Target.transform.position;
             currentPosition.z = distance;
             b27Target.transform.position = currentPosition;
@@ -125,6 +181,25 @@ public class DistanceMenuManager : MonoBehaviour
         else
         {
             Debug.LogError("DistanceMenuManager: Cannot set distance - B27 Target is null!");
+        }
+    }
+    
+    private void OnResponsiveDistanceToggled(bool isOn)
+    {
+        if (targetController != null)
+        {
+            targetController.SetResponsiveDistanceEnabled(isOn);
+            Debug.Log($"DistanceMenuManager: Responsive Distance set to {isOn}");
+            
+            if (isOn)
+            {
+                // When enabling responsive distance, reset to base position
+                targetController.ResetToBasePosition();
+            }
+        }
+        else
+        {
+            Debug.LogError("DistanceMenuManager: No QualificationTargetController found!");
         }
     }
     
