@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public enum TargetMode
 {
@@ -20,6 +21,33 @@ public class AppModeManager : MonoBehaviour
     
     private TargetMode currentMode = TargetMode.None;
     private TargetModeMenuManager targetModeMenuManager;
+    private InputAction toggleModeAction;
+    
+    void Awake()
+    {
+        // Create and configure the input action for X key
+        toggleModeAction = new InputAction("ToggleMode", binding: "<Keyboard>/x");
+        toggleModeAction.performed += OnToggleModeAction;
+    }
+    
+    void OnEnable()
+    {
+        toggleModeAction?.Enable();
+    }
+    
+    void OnDisable()
+    {
+        toggleModeAction?.Disable();
+    }
+    
+    void OnDestroy()
+    {
+        if (toggleModeAction != null)
+        {
+            toggleModeAction.performed -= OnToggleModeAction;
+            toggleModeAction.Dispose();
+        }
+    }
     
     void Start()
     {
@@ -37,6 +65,11 @@ public class AppModeManager : MonoBehaviour
         }
         
         SetMode(TargetMode.None);
+    }
+    
+    private void OnToggleModeAction(InputAction.CallbackContext context)
+    {
+        ToggleMode();
     }
     
     public void SetMode(TargetMode mode)
@@ -59,6 +92,12 @@ public class AppModeManager : MonoBehaviour
         if (ReactiveModeMenu != null)
             ReactiveModeMenu.SetActive(mode == TargetMode.Reactive);
         
+        // Update button highlights in the target mode menu
+        if (targetModeMenuManager != null)
+        {
+            targetModeMenuManager.UpdateButtonHighlight(mode);
+        }
+        
         Debug.Log($"App Mode changed to: {mode}");
     }
     
@@ -75,5 +114,22 @@ public class AppModeManager : MonoBehaviour
     public TargetMode GetCurrentMode()
     {
         return currentMode;
+    }
+    
+    public void ToggleMode()
+    {
+        // Toggle between Qualification and Reactive modes
+        switch (currentMode)
+        {
+            case TargetMode.None:
+            case TargetMode.Reactive:
+                SetMode(TargetMode.Qualification);
+                Debug.Log("X key pressed: Switching to Qualification Mode");
+                break;
+            case TargetMode.Qualification:
+                SetMode(TargetMode.Reactive);
+                Debug.Log("X key pressed: Switching to Reactive Mode");
+                break;
+        }
     }
 }
