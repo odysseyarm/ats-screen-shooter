@@ -105,15 +105,35 @@ public class TargetModeMenuManager : MonoBehaviour
             {
                 case "Qualification":
                     appModeManager.OnQualificationModeSelected();
+                    UpdateButtonHighlight(TargetMode.Qualification);
                     break;
                 case "Reactive":
                     appModeManager.OnReactiveModeSelected();
+                    UpdateButtonHighlight(TargetMode.Reactive);
                     break;
             }
         }
         else
         {
             Debug.LogError("AppModeManager is not assigned!");
+        }
+    }
+    
+    public void UpdateButtonHighlight(TargetMode mode)
+    {
+        // Update button visual states based on current mode
+        if (qualificationButton != null)
+        {
+            var qualColors = qualificationButton.colors;
+            qualColors.normalColor = (mode == TargetMode.Qualification) ? qualColors.selectedColor : Color.white;
+            qualificationButton.colors = qualColors;
+        }
+        
+        if (reactiveButton != null)
+        {
+            var reactColors = reactiveButton.colors;
+            reactColors.normalColor = (mode == TargetMode.Reactive) ? reactColors.selectedColor : Color.white;
+            reactiveButton.colors = reactColors;
         }
     }
 }
