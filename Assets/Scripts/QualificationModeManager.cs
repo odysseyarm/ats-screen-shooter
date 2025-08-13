@@ -71,6 +71,19 @@ public class QualificationModeManager : MonoBehaviour
         }
         
         Debug.Log($"QualificationModeManager: Starting with {b27Targets.Count} valid B27 targets");
+        
+        // Apply initial Day mode materials after a short delay
+        StartCoroutine(ApplyInitialMaterials());
+    }
+    
+    private System.Collections.IEnumerator ApplyInitialMaterials()
+    {
+        // Wait for scene to be fully loaded
+        yield return new WaitForSeconds(0.1f);
+        
+        // Apply Day mode materials on startup
+        Debug.Log("QualificationModeManager: Applying initial Day mode materials");
+        UpdateTargetMaterials(false);
     }
     
     private void FindB27TargetsInScene()
@@ -138,14 +151,17 @@ public class QualificationModeManager : MonoBehaviour
     {
         if (b27TargetMaterialDay == null || b27TargetMaterialNight == null)
         {
-            Debug.LogWarning("QualificationModeManager: Day or Night material not assigned!");
+            Debug.LogError($"QualificationModeManager: Materials not assigned! Day: {b27TargetMaterialDay}, Night: {b27TargetMaterialNight}");
             return;
         }
         
         Material materialToUse = isDarkMode ? b27TargetMaterialNight : b27TargetMaterialDay;
         string modeText = isDarkMode ? "NIGHT" : "DAY";
         
+        Debug.Log($"QualificationModeManager: Updating {b27Targets.Count} targets to {modeText} mode with material: {materialToUse.name}");
+        
         int updatedCount = 0;
+        int failedCount = 0;
         foreach (var target in b27Targets)
         {
             if (target != null)
@@ -153,14 +169,25 @@ public class QualificationModeManager : MonoBehaviour
                 Renderer renderer = GetTargetRenderer(target);
                 if (renderer != null)
                 {
+                    Material previousMaterial = renderer.material;
                     renderer.material = materialToUse;
                     updatedCount++;
-                    Debug.Log($"QualificationModeManager: Updated {target.name} to {modeText} material");
+                    Debug.Log($"QualificationModeManager: Updated {target.name} from {previousMaterial.name} to {materialToUse.name}");
                 }
+                else
+                {
+                    failedCount++;
+                    Debug.LogWarning($"QualificationModeManager: No renderer found for target {target.name}");
+                }
+            }
+            else
+            {
+                failedCount++;
+                Debug.LogWarning("QualificationModeManager: Null target in list");
             }
         }
         
-        Debug.Log($"QualificationModeManager: Updated {updatedCount} B27 targets to {modeText} mode");
+        Debug.Log($"QualificationModeManager: Material update complete - Updated: {updatedCount}, Failed: {failedCount}");
     }
     
     public void RefreshMaterials()

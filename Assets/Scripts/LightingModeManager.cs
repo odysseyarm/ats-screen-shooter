@@ -27,6 +27,10 @@ public class LightingModeManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private FlashlightController flashlightController;
     
+    [Header("Gaia Integration")]
+    [SerializeField] private GaiaLightingProfile gaiaLightingProfile;
+    [Tooltip("Assign the 'Gaia Lighting System Profile' asset here to ensure it's included in builds")]
+    
     [Header("Managers")]
     [SerializeField] private QualificationModeManager qualificationModeManager;
     
@@ -47,6 +51,20 @@ public class LightingModeManager : MonoBehaviour
         if (flashlightController == null)
         {
             Debug.LogError("LightingModeManager: FlashlightController not assigned! Please assign it in the Inspector.");
+        }
+        
+        // Find QualificationModeManager early
+        if (qualificationModeManager == null)
+        {
+            qualificationModeManager = FindObjectOfType<QualificationModeManager>();
+            if (qualificationModeManager != null)
+            {
+                Debug.Log("LightingModeManager: Found QualificationModeManager in Awake");
+            }
+            else
+            {
+                Debug.LogWarning("LightingModeManager: QualificationModeManager not found in Awake - will retry in Start");
+            }
         }
         
         StoreOriginalLightingSettings();
@@ -80,9 +98,13 @@ public class LightingModeManager : MonoBehaviour
         
         CheckForGaiaSceneLighting();
         
-        // Always attempt to restore the persisted lighting mode after scene load
-        // Even if modes match, we need to reapply settings for the new scene
-        StartCoroutine(RestorePersistedMode());
+        // Always start in Normal (Day) mode to ensure proper initialization
+        // This ensures all materials and lighting are properly set up
+        persistedMode = LightingMode.Normal;
+        currentMode = LightingMode.Normal;
+        
+        // Apply Normal mode settings after a short delay to ensure everything is loaded
+        StartCoroutine(InitializeWithNormalMode());
     }
     
     private void StoreOriginalLightingSettings()
@@ -103,28 +125,58 @@ public class LightingModeManager : MonoBehaviour
             
             if (gaiaSceneProfile.m_lightingProfiles == null || gaiaSceneProfile.m_lightingProfiles.Count == 0)
             {
+                Debug.LogWarning("LightingModeManager: Gaia lighting profiles are empty, attempting to load them...");
                 
-                var lightingProfiles = UnityEngine.Resources.FindObjectsOfTypeAll<GaiaLightingProfile>();
                 GaiaLightingProfile lightingProfile = null;
                 
-                foreach (var profile in lightingProfiles)
+                // First priority: Use the serialized field reference (this ensures it's included in builds)
+                if (gaiaLightingProfile != null)
                 {
-                    if (profile.name.Contains("Gaia Lighting System Profile"))
+                    lightingProfile = gaiaLightingProfile;
+                    Debug.Log("LightingModeManager: Using assigned Gaia Lighting Profile from Inspector");
+                }
+                
+                // Second priority: Try to load from Resources folder if the asset is there
+                if (lightingProfile == null)
+                {
+                    lightingProfile = Resources.Load<GaiaLightingProfile>("Gaia Lighting System Profile");
+                    if (lightingProfile != null)
                     {
-                        lightingProfile = profile;
-                        break;
+                        Debug.Log("LightingModeManager: Loaded lighting profile from Resources folder");
                     }
                 }
                 
-                if (lightingProfile == null && lightingProfiles.Length > 0)
+                // Third priority: Try finding already loaded profiles
+                if (lightingProfile == null)
                 {
-                    lightingProfile = lightingProfiles[0];
+                    var lightingProfiles = UnityEngine.Resources.FindObjectsOfTypeAll<GaiaLightingProfile>();
+                    
+                    foreach (var profile in lightingProfiles)
+                    {
+                        if (profile.name.Contains("Gaia Lighting System Profile"))
+                        {
+                            lightingProfile = profile;
+                            Debug.Log($"LightingModeManager: Found loaded lighting profile: {profile.name}");
+                            break;
+                        }
+                    }
+                    
+                    if (lightingProfile == null && lightingProfiles.Length > 0)
+                    {
+                        lightingProfile = lightingProfiles[0];
+                        Debug.LogWarning($"LightingModeManager: Using fallback lighting profile: {lightingProfile.name}");
+                    }
                 }
                 
                 #if UNITY_EDITOR
+                // Only use AssetDatabase in editor as a last resort
                 if (lightingProfile == null)
                 {
                     lightingProfile = UnityEditor.AssetDatabase.LoadAssetAtPath<GaiaLightingProfile>("Assets/Procedural Worlds/Gaia/Lighting/Gaia Lighting System Profile.asset");
+                    if (lightingProfile != null)
+                    {
+                        Debug.Log("LightingModeManager: Loaded lighting profile from AssetDatabase (Editor only)");
+                    }
                 }
                 #endif
                 
@@ -132,6 +184,12 @@ public class LightingModeManager : MonoBehaviour
                 {
                     gaiaSceneProfile.m_lightingProfiles = lightingProfile.m_lightingProfiles;
                     gaiaSceneProfile.m_masterSkyboxMaterial = lightingProfile.m_masterSkyboxMaterial;
+                    Debug.Log($"LightingModeManager: Successfully loaded {gaiaSceneProfile.m_lightingProfiles.Count} lighting profiles");
+                }
+                else
+                {
+                    Debug.LogError("LightingModeManager: Failed to load Gaia lighting profiles! Dark mode sky switching will not work.");
+                    Debug.LogError("Please assign the 'Gaia Lighting System Profile' asset to the LightingModeManager in the Inspector!");
                 }
             }
             
@@ -210,6 +268,31 @@ public class LightingModeManager : MonoBehaviour
         
         // Update target materials through QualificationModeManager
         UpdateTargetMaterials(mode);
+    }
+    
+    private System.Collections.IEnumerator InitializeWithNormalMode()
+    {
+        // Wait a frame to ensure everything is initialized
+        yield return new WaitForEndOfFrame();
+        
+        // Find QualificationModeManager if not already assigned
+        if (qualificationModeManager == null)
+        {
+            qualificationModeManager = FindObjectOfType<QualificationModeManager>();
+            Debug.Log($"LightingModeManager: Found QualificationModeManager: {qualificationModeManager != null}");
+        }
+        
+        // Set Normal mode to ensure all materials and lighting are properly configured
+        SetLightingMode(LightingMode.Normal);
+        Debug.Log("LightingModeManager: Initialized with Normal (Day) mode - all materials and lighting configured");
+        
+        // Force update target materials after another short delay
+        yield return new WaitForSeconds(0.1f);
+        if (qualificationModeManager != null)
+        {
+            Debug.Log("LightingModeManager: Forcing target material update to Day mode");
+            qualificationModeManager.UpdateTargetMaterials(false);
+        }
     }
     
     private System.Collections.IEnumerator RestorePersistedMode()
