@@ -50,6 +50,9 @@ public class ScreenGUI : MonoBehaviour
 
     private void ToggleUI(InputAction.CallbackContext obj) {
         ui.enabled = !ui.enabled;
+        if (ui.enabled) {
+            Refresh();
+        }
     }
 
     // Update is called once per frame

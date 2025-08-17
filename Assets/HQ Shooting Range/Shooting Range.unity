@@ -2585,6 +2585,7 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 61cb3355e71b48744b3e65c242adcf9b, type: 3}
   - {fileID: 2800000, guid: 1962ae29df98a2c48aa43e9a78f57fde, type: 3}
   - {fileID: 2800000, guid: e152e10bc66efcc42ac92c5027d16e15, type: 3}
+  screenGUI: {fileID: 1006813160}
 --- !u!114 &579598155
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -33,6 +33,9 @@ public class InputHandlers : TrackerBase
     private OdysseyHubClient client;
     private ScreenShooter screenShooter;
 
+    [SerializeField]
+    private ScreenGUI screenGUI;
+
     private bool showCrosshair = true;
     private bool showZeroTarget = false;
 
@@ -201,6 +204,7 @@ public class InputHandlers : TrackerBase
                 player.crosshair = new GameObject("CrosshairPlayer" + index).AddComponent<Image>();
                 player.crosshair.transform.SetParent(crosshairCanvas.transform, false);
                 player.crosshair.GetComponent<Image>().sprite = Sprite.Create(crosshairTextures[i], new Rect(0, 0, crosshairTextures[i].width, crosshairTextures[i].height), new Vector2(0.5f, 0.5f), 1.0f);
+                screenGUI.Refresh();
             });
         } catch (Exception e) {
             Debug.LogError("Error: " + e.Message);
@@ -210,6 +214,7 @@ public class InputHandlers : TrackerBase
     public async void DeviceDisconnected(ohc.uniffi.DeviceRecord deviceR) {
         await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
             Destroy(players.Find(p => p.device == deviceR).crosshair.gameObject);
+            screenGUI.Refresh();
         });
         players.RemoveWhere(p => p.device == deviceR);
     }
