@@ -118,6 +118,9 @@ public class ScreenGUI : MonoBehaviour
 
     private void ToggleUI(InputAction.CallbackContext obj) {
         ui.enabled = !ui.enabled;
+        if (ui.enabled) {
+            Refresh();
+        }
     }
 
     private void RebuildListView() {

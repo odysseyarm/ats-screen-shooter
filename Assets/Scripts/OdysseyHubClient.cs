@@ -52,7 +52,7 @@ public class OdysseyHubClient : MonoBehaviour
 #nullable enable
         Channel<(ohc.uniffi.Event?, ohc.uniffi.ClientException?)> eventChannel = Channel.CreateUnbounded<(ohc.uniffi.Event?, ohc.uniffi.ClientException?)>();
 #nullable disable
-        await Task.Factory.StartNew(async () => await client.RunStream(eventChannel.Writer), TaskCreationOptions.LongRunning);
+        await Task.Factory.StartNew(async () => await client.SubscribeEvents(eventChannel.Writer), TaskCreationOptions.LongRunning);
 
         try {
             await foreach ((var @event, var err) in eventChannel.Reader.ReadAllAsync(cancellationTokenSource.Token)) {
@@ -72,11 +72,9 @@ public class OdysseyHubClient : MonoBehaviour
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ConnectEvent _:
                                     _ = Task.Run(async () => { await inputHandlers.DeviceConnected(deviceEvent.v1.device); });
-                                    screenGUI.Refresh();
                                     break;
                                 case ohc.uniffi.DeviceEventKind.DisconnectEvent _:
                                     inputHandlers.DeviceDisconnected(deviceEvent.v1.device);
-                                    screenGUI.Refresh();
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ZeroResult zeroResult:
                                     if (zeroResult.v1) {
