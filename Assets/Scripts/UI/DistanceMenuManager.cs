@@ -97,10 +97,12 @@ public class DistanceMenuManager : MonoBehaviour
         {
             responsiveDistanceToggle.onValueChanged.AddListener(OnResponsiveDistanceToggled);
             
-            // Set initial state from the target controller
+            // For Qualification Mode, always start with responsive distance disabled
+            // This ensures consistency even if something else has modified the state
+            responsiveDistanceToggle.isOn = false;
             if (targetController != null)
             {
-                responsiveDistanceToggle.isOn = targetController.IsResponsiveDistanceEnabled();
+                targetController.SetResponsiveDistanceEnabled(false);
             }
         }
         
@@ -182,11 +184,7 @@ public class DistanceMenuManager : MonoBehaviour
             targetController.SetResponsiveDistanceEnabled(isOn);
             Debug.Log($"DistanceMenuManager: Responsive Distance set to {isOn}");
             
-            if (isOn)
-            {
-                // When enabling responsive distance, reset to base position
-                targetController.ResetToBasePosition();
-            }
+            // No longer resetting position - responsive mode will start from current position
         }
         else
         {

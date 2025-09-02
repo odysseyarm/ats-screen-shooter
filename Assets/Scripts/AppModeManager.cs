@@ -87,7 +87,28 @@ public class AppModeManager : MonoBehaviour
             Debug.LogWarning("ReactiveMode GameObject is not assigned!");
         
         if (QualificationModeMenu != null)
+        {
             QualificationModeMenu.SetActive(mode == TargetMode.Qualification);
+            
+            // When entering Qualification Mode, ensure Responsive Distance is turned off
+            if (mode == TargetMode.Qualification)
+            {
+                // Find the DistanceMenuManager and disable responsive distance
+                DistanceMenuManager distanceMenuManager = QualificationModeMenu.GetComponentInChildren<DistanceMenuManager>();
+                if (distanceMenuManager != null && distanceMenuManager.responsiveDistanceToggle != null)
+                {
+                    distanceMenuManager.responsiveDistanceToggle.isOn = false;
+                    Debug.Log("AppModeManager: Disabled Responsive Distance for Qualification Mode");
+                }
+                
+                // Also directly disable it on the QualificationTargetController if it exists
+                QualificationTargetController targetController = FindObjectOfType<QualificationTargetController>();
+                if (targetController != null)
+                {
+                    targetController.SetResponsiveDistanceEnabled(false);
+                }
+            }
+        }
         
         if (ReactiveModeMenu != null)
             ReactiveModeMenu.SetActive(mode == TargetMode.Reactive);
