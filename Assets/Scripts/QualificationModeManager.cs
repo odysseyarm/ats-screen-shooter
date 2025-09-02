@@ -15,6 +15,12 @@ public class QualificationModeManager : MonoBehaviour
     
     void Awake()
     {
+        // Validate material assignments
+        if (b27TargetMaterialDay == null || b27TargetMaterialNight == null)
+        {
+            Debug.LogError($"QualificationModeManager: Critical - Materials not assigned in Inspector! Day: {b27TargetMaterialDay}, Night: {b27TargetMaterialNight}");
+        }
+        
         // Store the Inspector-assigned list if it exists
         List<GameObject> inspectorList = null;
         if (b27Targets != null && b27Targets.Count > 0)
@@ -33,15 +39,16 @@ public class QualificationModeManager : MonoBehaviour
             b27Targets = inspectorList;
         }
         
-        // Store original materials
+        // Store original materials using sharedMaterial to avoid creating instances
         foreach (var target in b27Targets)
         {
             if (target != null)
             {
                 Renderer renderer = GetTargetRenderer(target);
-                if (renderer != null && renderer.material != null)
+                if (renderer != null && renderer.sharedMaterial != null)
                 {
-                    originalMaterials[renderer] = renderer.material;
+                    originalMaterials[renderer] = renderer.sharedMaterial;
+                    Debug.Log($"QualificationModeManager: Stored original material '{renderer.sharedMaterial.name}' for {target.name}");
                 }
             }
         }
@@ -158,7 +165,8 @@ public class QualificationModeManager : MonoBehaviour
         Material materialToUse = isDarkMode ? b27TargetMaterialNight : b27TargetMaterialDay;
         string modeText = isDarkMode ? "NIGHT" : "DAY";
         
-        Debug.Log($"QualificationModeManager: Updating {b27Targets.Count} targets to {modeText} mode with material: {materialToUse.name}");
+        Debug.Log($"QualificationModeManager: Starting update of {b27Targets.Count} targets to {modeText} mode");
+        Debug.Log($"QualificationModeManager: Using material: {materialToUse.name} (Instance ID: {materialToUse.GetInstanceID()})");
         
         int updatedCount = 0;
         int failedCount = 0;
@@ -169,10 +177,28 @@ public class QualificationModeManager : MonoBehaviour
                 Renderer renderer = GetTargetRenderer(target);
                 if (renderer != null)
                 {
-                    Material previousMaterial = renderer.material;
-                    renderer.material = materialToUse;
+                    // Store previous material info for debugging
+                    string previousMaterialName = renderer.sharedMaterial != null ? renderer.sharedMaterial.name : "NULL";
+                    
+                    // Use sharedMaterial to avoid creating instances
+                    renderer.sharedMaterial = materialToUse;
+                    
+                    // Force the renderer to update by reassigning the materials array
+                    Material[] mats = renderer.sharedMaterials;
+                    if (mats.Length > 0)
+                    {
+                        mats[0] = materialToUse;
+                        renderer.sharedMaterials = mats;
+                    }
+                    
                     updatedCount++;
-                    Debug.Log($"QualificationModeManager: Updated {target.name} from {previousMaterial.name} to {materialToUse.name}");
+                    Debug.Log($"QualificationModeManager: Updated {target.name} from '{previousMaterialName}' to '{materialToUse.name}'");
+                    
+                    // Verify the material was actually applied
+                    if (renderer.sharedMaterial != materialToUse)
+                    {
+                        Debug.LogError($"QualificationModeManager: Material verification failed for {target.name}! Expected: {materialToUse.name}, Got: {renderer.sharedMaterial?.name ?? "NULL"}");
+                    }
                 }
                 else
                 {
@@ -188,6 +214,26 @@ public class QualificationModeManager : MonoBehaviour
         }
         
         Debug.Log($"QualificationModeManager: Material update complete - Updated: {updatedCount}, Failed: {failedCount}");
+        
+        // Force a refresh of the rendering
+        #if !UNITY_EDITOR
+        if (updatedCount > 0)
+        {
+            Debug.Log("QualificationModeManager: Forcing renderer refresh in build");
+            foreach (var target in b27Targets)
+            {
+                if (target != null)
+                {
+                    Renderer renderer = GetTargetRenderer(target);
+                    if (renderer != null)
+                    {
+                        renderer.enabled = false;
+                        renderer.enabled = true;
+                    }
+                }
+            }
+        }
+        #endif
     }
     
     public void RefreshMaterials()
@@ -201,12 +247,12 @@ public class QualificationModeManager : MonoBehaviour
     
     void OnDestroy()
     {
-        // Optionally restore original materials
+        // Optionally restore original materials using sharedMaterial
         foreach (var kvp in originalMaterials)
         {
             if (kvp.Key != null)
             {
-                kvp.Key.material = kvp.Value;
+                kvp.Key.sharedMaterial = kvp.Value;
             }
         }
     }

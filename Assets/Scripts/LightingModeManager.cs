@@ -591,26 +591,47 @@ public class LightingModeManager : MonoBehaviour
     
     private void UpdateTargetMaterials(LightingMode mode)
     {
+        Debug.Log($"LightingModeManager: UpdateTargetMaterials called with mode: {mode}");
+        
         // Update B27 target materials through QualificationModeManager
         if (qualificationModeManager == null)
         {
             qualificationModeManager = FindObjectOfType<QualificationModeManager>();
+            Debug.Log($"LightingModeManager: Had to find QualificationModeManager - found: {qualificationModeManager != null}");
         }
         
         if (qualificationModeManager != null)
         {
-            qualificationModeManager.UpdateTargetMaterials(mode == LightingMode.Dark);
+            bool isDarkMode = mode == LightingMode.Dark;
+            Debug.Log($"LightingModeManager: Calling QualificationModeManager.UpdateTargetMaterials with isDarkMode: {isDarkMode}");
+            qualificationModeManager.UpdateTargetMaterials(isDarkMode);
+            
+            // In builds, add a delayed second update to ensure materials are applied
+            #if !UNITY_EDITOR
+            StartCoroutine(DelayedMaterialUpdate(isDarkMode));
+            #endif
         }
         else
         {
-            Debug.LogWarning("LightingModeManager: QualificationModeManager not found!");
+            Debug.LogError("LightingModeManager: QualificationModeManager not found! B27 targets will not update.");
         }
         
         // Also update any ReactiveTargets in the scene
         ReactiveTarget[] reactiveTargets = FindObjectsOfType<ReactiveTarget>();
+        Debug.Log($"LightingModeManager: Found {reactiveTargets.Length} ReactiveTargets to update");
         foreach (var target in reactiveTargets)
         {
             target.RefreshMaterial();
+        }
+    }
+    
+    private System.Collections.IEnumerator DelayedMaterialUpdate(bool isDarkMode)
+    {
+        yield return new WaitForSeconds(0.1f);
+        Debug.Log($"LightingModeManager: Performing delayed material update for builds (isDarkMode: {isDarkMode})");
+        if (qualificationModeManager != null)
+        {
+            qualificationModeManager.UpdateTargetMaterials(isDarkMode);
         }
     }
 }

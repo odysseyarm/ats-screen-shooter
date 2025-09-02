@@ -166,7 +166,24 @@ public class ReactiveTarget : MonoBehaviour
         
         if (matToUse != null)
         {
-            targetRenderer.material = matToUse;
+            // Use sharedMaterial to avoid creating instances
+            targetRenderer.sharedMaterial = matToUse;
+            
+            // Force the renderer to update by reassigning the materials array
+            Material[] mats = targetRenderer.sharedMaterials;
+            if (mats.Length > 0)
+            {
+                mats[0] = matToUse;
+                targetRenderer.sharedMaterials = mats;
+            }
+            
+            // In builds, force a renderer refresh
+            #if !UNITY_EDITOR
+            targetRenderer.enabled = false;
+            targetRenderer.enabled = true;
+            #endif
+            
+            Debug.Log($"ReactiveTarget: Applied material {matToUse.name} to {gameObject.name} (verified: {targetRenderer.sharedMaterial?.name ?? "NULL"})");
         }
         else
         {
