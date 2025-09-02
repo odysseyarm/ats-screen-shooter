@@ -81,6 +81,7 @@ public class DistanceMenuManager : MonoBehaviour
     void OnEnable()
     {
         inputActions.Enable();
+        inputActions.UI.Enable();
         
         if (threeYardButton != null)
             threeYardButton.onClick.AddListener(() => SetTargetDistance(threeYardDistance));
@@ -108,18 +109,19 @@ public class DistanceMenuManager : MonoBehaviour
         {
             responsiveDistanceLabel.text = "Responsive Distance";
         }
-            
-        var keyboard = Keyboard.current;
-        if (keyboard != null)
-        {
-            inputActions.UI.Enable();
-        }
+        
+        // Subscribe to the R key action for toggling responsive distance
+        inputActions.UI.ToggleResponsiveDistance.performed += OnToggleResponsiveDistanceAction;
         
         UpdateButtonLabels();
     }
     
     void OnDisable()
     {
+        // Unsubscribe from the R key action
+        inputActions.UI.ToggleResponsiveDistance.performed -= OnToggleResponsiveDistanceAction;
+        
+        inputActions.UI.Disable();
         inputActions.Disable();
         
         if (threeYardButton != null)
@@ -203,6 +205,25 @@ public class DistanceMenuManager : MonoBehaviour
         }
     }
     
+    private void ToggleResponsiveDistance()
+    {
+        if (responsiveDistanceToggle != null)
+        {
+            // Toggle the checkbox state
+            responsiveDistanceToggle.isOn = !responsiveDistanceToggle.isOn;
+            Debug.Log($"DistanceMenuManager: R key pressed - Toggled Responsive Distance to {responsiveDistanceToggle.isOn}");
+        }
+        else
+        {
+            Debug.LogWarning("DistanceMenuManager: Responsive Distance Toggle UI element not found!");
+        }
+    }
+    
+    private void OnToggleResponsiveDistanceAction(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    {
+        ToggleResponsiveDistance();
+    }
+    
     private void HighlightButton(Button button)
     {
         if (button != null)
@@ -274,6 +295,12 @@ public class DistanceMenuManager : MonoBehaviour
             var textComponent = fifteenYardButton.GetComponentInChildren<TextMeshProUGUI>();
             if (textComponent != null)
                 textComponent.text = "15 yard (3)";
+        }
+        
+        // Update responsive distance label to show R key shortcut
+        if (responsiveDistanceLabel != null)
+        {
+            responsiveDistanceLabel.text = "Responsive Distance (R)";
         }
     }
 }
