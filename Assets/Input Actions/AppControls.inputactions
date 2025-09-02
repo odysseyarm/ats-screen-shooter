@@ -695,6 +695,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleResponsiveDistance",
+                    "type": "Button",
+                    "id": "a5b6c7d8-e9f0-1234-5678-90abcdef1234",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1157,6 +1166,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Escape",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b9c8d0e1-f2a3-4567-89ab-cdef01234567",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ToggleResponsiveDistance",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
