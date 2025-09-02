@@ -110,16 +110,22 @@ public class DistanceMenuManager : MonoBehaviour
             responsiveDistanceLabel.text = "Responsive Distance";
         }
         
-        // Subscribe to the R key action for toggling responsive distance
+        // Subscribe to input action events
         inputActions.UI.ToggleResponsiveDistance.performed += OnToggleResponsiveDistanceAction;
+        inputActions.UI.SetDistance3Yards.performed += OnSetDistance3Yards;
+        inputActions.UI.SetDistance7Yards.performed += OnSetDistance7Yards;
+        inputActions.UI.SetDistance15Yards.performed += OnSetDistance15Yards;
         
         UpdateButtonLabels();
     }
     
     void OnDisable()
     {
-        // Unsubscribe from the R key action
+        // Unsubscribe from input action events
         inputActions.UI.ToggleResponsiveDistance.performed -= OnToggleResponsiveDistanceAction;
+        inputActions.UI.SetDistance3Yards.performed -= OnSetDistance3Yards;
+        inputActions.UI.SetDistance7Yards.performed -= OnSetDistance7Yards;
+        inputActions.UI.SetDistance15Yards.performed -= OnSetDistance15Yards;
         
         inputActions.UI.Disable();
         inputActions.Disable();
@@ -139,25 +145,8 @@ public class DistanceMenuManager : MonoBehaviour
     
     void Update()
     {
-        var keyboard = Keyboard.current;
-        if (keyboard != null)
-        {
-            if (keyboard.digit1Key.wasPressedThisFrame || keyboard.numpad1Key.wasPressedThisFrame)
-            {
-                SetTargetDistance(threeYardDistance);
-                HighlightButton(threeYardButton);
-            }
-            else if (keyboard.digit2Key.wasPressedThisFrame || keyboard.numpad2Key.wasPressedThisFrame)
-            {
-                SetTargetDistance(sevenYardDistance);
-                HighlightButton(sevenYardButton);
-            }
-            else if (keyboard.digit3Key.wasPressedThisFrame || keyboard.numpad3Key.wasPressedThisFrame)
-            {
-                SetTargetDistance(fifteenYardDistance);
-                HighlightButton(fifteenYardButton);
-            }
-        }
+        // Input is now handled through input action events in OnEnable
+        // No need to poll keyboard in Update anymore
     }
     
     private void SetTargetDistance(float distance)
@@ -222,6 +211,24 @@ public class DistanceMenuManager : MonoBehaviour
     private void OnToggleResponsiveDistanceAction(UnityEngine.InputSystem.InputAction.CallbackContext context)
     {
         ToggleResponsiveDistance();
+    }
+    
+    private void OnSetDistance3Yards(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    {
+        SetTargetDistance(threeYardDistance);
+        HighlightButton(threeYardButton);
+    }
+    
+    private void OnSetDistance7Yards(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    {
+        SetTargetDistance(sevenYardDistance);
+        HighlightButton(sevenYardButton);
+    }
+    
+    private void OnSetDistance15Yards(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    {
+        SetTargetDistance(fifteenYardDistance);
+        HighlightButton(fifteenYardButton);
     }
     
     private void HighlightButton(Button button)

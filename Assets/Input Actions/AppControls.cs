@@ -790,6 +790,33 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SetDistance3Yards"",
+                    ""type"": ""Button"",
+                    ""id"": ""c1d2e3f4-5678-90ab-cdef-123456789012"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SetDistance7Yards"",
+                    ""type"": ""Button"",
+                    ""id"": ""d2e3f4a5-6789-01bc-def2-234567890123"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SetDistance15Yards"",
+                    ""type"": ""Button"",
+                    ""id"": ""e3f4a5b6-7890-12cd-ef34-345678901234"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -1265,6 +1292,72 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
                     ""action"": ""ToggleResponsiveDistance"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f1a2b3c4-d5e6-7890-abcd-ef1234567890"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""SetDistance3Yards"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f2a3b4c5-d6e7-8901-bcde-f23456789012"",
+                    ""path"": ""<Keyboard>/numpad1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""SetDistance3Yards"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f3a4b5c6-d7e8-9012-cdef-345678901234"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""SetDistance7Yards"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f4a5b6c7-d8e9-0123-def0-456789012345"",
+                    ""path"": ""<Keyboard>/numpad2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""SetDistance7Yards"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f5a6b7c8-d9e0-1234-ef01-567890123456"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""SetDistance15Yards"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f6a7b8c9-d0e1-2345-f012-678901234567"",
+                    ""path"": ""<Keyboard>/numpad3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""SetDistance15Yards"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -1445,6 +1538,9 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
         m_UI_SwitchScene = m_UI.FindAction("SwitchScene", throwIfNotFound: true);
         m_UI_Escape = m_UI.FindAction("Escape", throwIfNotFound: true);
         m_UI_ToggleResponsiveDistance = m_UI.FindAction("ToggleResponsiveDistance", throwIfNotFound: true);
+        m_UI_SetDistance3Yards = m_UI.FindAction("SetDistance3Yards", throwIfNotFound: true);
+        m_UI_SetDistance7Yards = m_UI.FindAction("SetDistance7Yards", throwIfNotFound: true);
+        m_UI_SetDistance15Yards = m_UI.FindAction("SetDistance15Yards", throwIfNotFound: true);
         // ExitModal
         m_ExitModal = asset.FindActionMap("ExitModal", throwIfNotFound: true);
         m_ExitModal_Exit = m_ExitModal.FindAction("Exit", throwIfNotFound: true);
@@ -1784,6 +1880,9 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_SwitchScene;
     private readonly InputAction m_UI_Escape;
     private readonly InputAction m_UI_ToggleResponsiveDistance;
+    private readonly InputAction m_UI_SetDistance3Yards;
+    private readonly InputAction m_UI_SetDistance7Yards;
+    private readonly InputAction m_UI_SetDistance15Yards;
     /// <summary>
     /// Provides access to input actions defined in input action map "UI".
     /// </summary>
@@ -1852,6 +1951,18 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @ToggleResponsiveDistance => m_Wrapper.m_UI_ToggleResponsiveDistance;
         /// <summary>
+        /// Provides access to the underlying input action "UI/SetDistance3Yards".
+        /// </summary>
+        public InputAction @SetDistance3Yards => m_Wrapper.m_UI_SetDistance3Yards;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/SetDistance7Yards".
+        /// </summary>
+        public InputAction @SetDistance7Yards => m_Wrapper.m_UI_SetDistance7Yards;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/SetDistance15Yards".
+        /// </summary>
+        public InputAction @SetDistance15Yards => m_Wrapper.m_UI_SetDistance15Yards;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_UI; }
@@ -1919,6 +2030,15 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
             @ToggleResponsiveDistance.started += instance.OnToggleResponsiveDistance;
             @ToggleResponsiveDistance.performed += instance.OnToggleResponsiveDistance;
             @ToggleResponsiveDistance.canceled += instance.OnToggleResponsiveDistance;
+            @SetDistance3Yards.started += instance.OnSetDistance3Yards;
+            @SetDistance3Yards.performed += instance.OnSetDistance3Yards;
+            @SetDistance3Yards.canceled += instance.OnSetDistance3Yards;
+            @SetDistance7Yards.started += instance.OnSetDistance7Yards;
+            @SetDistance7Yards.performed += instance.OnSetDistance7Yards;
+            @SetDistance7Yards.canceled += instance.OnSetDistance7Yards;
+            @SetDistance15Yards.started += instance.OnSetDistance15Yards;
+            @SetDistance15Yards.performed += instance.OnSetDistance15Yards;
+            @SetDistance15Yards.canceled += instance.OnSetDistance15Yards;
         }
 
         /// <summary>
@@ -1972,6 +2092,15 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
             @ToggleResponsiveDistance.started -= instance.OnToggleResponsiveDistance;
             @ToggleResponsiveDistance.performed -= instance.OnToggleResponsiveDistance;
             @ToggleResponsiveDistance.canceled -= instance.OnToggleResponsiveDistance;
+            @SetDistance3Yards.started -= instance.OnSetDistance3Yards;
+            @SetDistance3Yards.performed -= instance.OnSetDistance3Yards;
+            @SetDistance3Yards.canceled -= instance.OnSetDistance3Yards;
+            @SetDistance7Yards.started -= instance.OnSetDistance7Yards;
+            @SetDistance7Yards.performed -= instance.OnSetDistance7Yards;
+            @SetDistance7Yards.canceled -= instance.OnSetDistance7Yards;
+            @SetDistance15Yards.started -= instance.OnSetDistance15Yards;
+            @SetDistance15Yards.performed -= instance.OnSetDistance15Yards;
+            @SetDistance15Yards.canceled -= instance.OnSetDistance15Yards;
         }
 
         /// <summary>
@@ -2388,6 +2517,27 @@ public partial class @AppControls: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnToggleResponsiveDistance(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SetDistance3Yards" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSetDistance3Yards(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SetDistance7Yards" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSetDistance7Yards(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SetDistance15Yards" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSetDistance15Yards(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "ExitModal" which allows adding and removing callbacks.
