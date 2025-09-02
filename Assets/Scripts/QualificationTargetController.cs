@@ -5,7 +5,7 @@ public class QualificationTargetController : MonoBehaviour
 {
     [Header("Responsive Distance Settings")]
     [SerializeField]
-    [Tooltip("Enable/disable the responsive distance feature")]
+    [Tooltip("Enable/disable the responsive distance feature - Disabled by default for Qualification Mode")]
     private bool responsiveDistanceEnabled = false;
     
     [SerializeField]
@@ -118,9 +118,19 @@ public class QualificationTargetController : MonoBehaviour
     {
         responsiveDistanceEnabled = enabled;
         
-        if (!enabled)
+        if (enabled)
         {
-            targetPosition.z = baseZPosition;
+            // When enabling, use the current position as the new base position
+            // This prevents the target from jumping when responsive mode is turned on
+            baseZPosition = transform.position.z;
+            targetPosition = transform.position;
+            lastTrackedDistance = 0f;
+            Debug.Log($"QualificationTargetController: Responsive mode enabled, starting from position Z={baseZPosition}");
+        }
+        else
+        {
+            // When disabling, keep the target at its current position
+            targetPosition = transform.position;
         }
     }
     
