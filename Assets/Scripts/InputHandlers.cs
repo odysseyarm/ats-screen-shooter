@@ -34,6 +34,7 @@ public class InputHandlers : TrackerBase
     private ScreenShooter screenShooter;
     private LightingModeManager lightingModeManager;
     private AppControls appControls;
+    private QualificationDistanceManager qualificationDistanceManager;
 
     [SerializeField]
     private ScreenGUI screenGUI;
@@ -141,9 +142,23 @@ public class InputHandlers : TrackerBase
         player.point = point;
         player.trackingHistory.Push(tracking);
 
-        // Track ANY device (gun or helmet) for position tracking
-        IsTracking = true;
-        translation = zero_translation + unityPose.position;
+        var device = new ohc.uniffi.Device(deviceR);
+
+        // Calculate the device offset
+        Vector3 deviceOffset = zero_translation + unityPose.position;
+
+        // If QualificationDistanceManager is handling true-size mode, let it manage the translation
+        if (qualificationDistanceManager != null && qualificationDistanceManager.IsTrueSizeEnabled())
+        {
+            // Update the distance manager with device tracking
+            qualificationDistanceManager.UpdateDeviceTracking(deviceOffset);
+        }
+        else
+        {
+            // Normal tracking behavior
+            IsTracking = true;
+            translation = deviceOffset;
+        }
 
         // Original helmet check can stay for other purposes if needed
         if (appConfig.Data.helmet_uuids.Any(uuid => uuid == device.uuid))
@@ -318,6 +333,12 @@ public class InputHandlers : TrackerBase
         if (lightingModeManager == null)
         {
             Debug.LogError($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: LightingModeManager not found in scene! Please add it to the scene.");
+        }
+        
+        qualificationDistanceManager = FindObjectOfType<QualificationDistanceManager>();
+        if (qualificationDistanceManager == null)
+        {
+            Debug.LogWarning("InputHandlers: QualificationDistanceManager not found in scene - true-size rendering will not work with device tracking");
         }
     }
 

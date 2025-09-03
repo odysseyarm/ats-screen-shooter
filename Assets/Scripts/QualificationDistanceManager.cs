@@ -35,6 +35,7 @@ public class QualificationDistanceManager : MonoBehaviour
     
     private Vector3 targetTranslation;
     private Vector3 currentTranslation;
+    private Vector3 deviceTrackingOffset = Vector3.zero;  // Store the gun/device tracking offset
     private Coroutine smoothingCoroutine;
     private bool isInitialized = false;
     
@@ -181,6 +182,25 @@ public class QualificationDistanceManager : MonoBehaviour
     public bool IsTrueSizeEnabled()
     {
         return trueSizeEnabled;
+    }
+    
+    /// <summary>
+    /// Updates the device tracking offset (gun movement)
+    /// Call this from InputHandlers when device tracking updates
+    /// </summary>
+    public void UpdateDeviceTracking(Vector3 deviceOffset)
+    {
+        if (!trueSizeEnabled || !isInitialized)
+            return;
+            
+        deviceTrackingOffset = deviceOffset;
+        // Combine device tracking with distance offset
+        Vector3 combinedTranslation = currentTranslation + deviceTrackingOffset;
+        
+        if (inputHandlers != null)
+        {
+            inputHandlers.Translation = combinedTranslation;
+        }
     }
     
     /// <summary>
