@@ -7803,6 +7803,7 @@ GameObject:
   m_Component:
   - component: {fileID: 801393222}
   - component: {fileID: 801393223}
+  - component: {fileID: 801393224}
   m_Layer: 0
   m_Name: QualificationMode
   m_TagString: Untagged
@@ -7843,6 +7844,24 @@ MonoBehaviour:
     type: 2}
   b27TargetMaterialNight: {fileID: 2100000, guid: 9d0b3af5f1ee5ba4c90d4d8eca9b942c,
     type: 2}
+--- !u!114 &801393224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 801393221}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ea7c15e9bad0ad46b24f1e3394bd828, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  presetDistancesYards:
+  - 3
+  - 7
+  - 15
+  baseCameraOffset: 1
+  smoothingTime: 0.5
 --- !u!1 &823055429
 GameObject:
   m_ObjectHideFlags: 0
@@ -9537,6 +9556,8 @@ GameObject:
   - component: {fileID: 973326028}
   - component: {fileID: 973326027}
   - component: {fileID: 973326026}
+  - component: {fileID: 973326035}
+  - component: {fileID: 973326034}
   m_Layer: 0
   m_Name: FlyCam
   m_TagString: MainCamera
@@ -9756,6 +9777,34 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &973326034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 973326024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ab8ea6f349bedb46be6025889a7b359, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Tracker: {fileID: 0}
+--- !u!114 &973326035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 973326024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c0bba6e90198a94a8c78e66ef068ccf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ProjectionScreen: {fileID: 0}
+  ClampNearPlane: 1
+  DrawGizmos: 1
 --- !u!4 &975049109 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 663232444366738389, guid: e9c709b74c129da49831d190fcd5f76a,
@@ -33546,6 +33595,43 @@ MonoBehaviour:
       y: 0
       z: 0
   m_terrainLoaderDataInitialized: 0
+--- !u!84 &1222444192
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 48
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 0
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &1229597707
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -34874,7 +34960,7 @@ MonoBehaviour:
     - 0
     m_textureResolution: 512
   m_gameCamera: {fileID: 973326033}
-  m_reflectionTexture: {fileID: 2058783927}
+  m_reflectionTexture: {fileID: 1222444192}
   m_distances:
   - 500
   - 500
@@ -38224,43 +38310,6 @@ MonoBehaviour:
   m_gaiaCreatedControllers:
   - {fileID: 0}
   - {fileID: 973326024}
---- !u!84 &2058783927
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 48
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &2089129196
 GameObject:
   m_ObjectHideFlags: 0
