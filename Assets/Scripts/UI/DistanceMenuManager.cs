@@ -15,9 +15,9 @@ public class DistanceMenuManager : MonoBehaviour
     public TextMeshProUGUI sevenYardText;
     public TextMeshProUGUI fifteenYardText;
     
-    [Header("Responsive Distance UI")]
-    public Toggle responsiveDistanceToggle;
-    public TextMeshProUGUI responsiveDistanceLabel;
+    [Header("True-Size Rendering UI")]
+    public Toggle trueSizeToggle;  // Renamed from responsiveDistanceToggle
+    public TextMeshProUGUI trueSizeLabel;  // Renamed from responsiveDistanceLabel
     
     [Header("Target Reference")]
     public GameObject b27Target;
@@ -100,28 +100,27 @@ public class DistanceMenuManager : MonoBehaviour
         if (fifteenYardButton != null)
             fifteenYardButton.onClick.AddListener(() => SetTargetDistance(fifteenYardDistance));
             
-        // Setup responsive distance toggle
-        if (responsiveDistanceToggle != null)
+        // Setup true-size rendering toggle
+        if (trueSizeToggle != null)
         {
-            responsiveDistanceToggle.onValueChanged.AddListener(OnResponsiveDistanceToggled);
+            trueSizeToggle.onValueChanged.AddListener(OnTrueSizeToggled);
             
-            // For Qualification Mode, always start with responsive distance disabled
-            // This ensures consistency even if something else has modified the state
-            responsiveDistanceToggle.isOn = false;
-            if (targetController != null)
+            // Start with true-size rendering disabled by default
+            trueSizeToggle.isOn = false;
+            if (distanceManager != null)
             {
-                targetController.SetResponsiveDistanceEnabled(false);
+                distanceManager.SetTrueSizeEnabled(false);
             }
         }
         
-        // Update responsive distance label
-        if (responsiveDistanceLabel != null)
+        // Update true-size label
+        if (trueSizeLabel != null)
         {
-            responsiveDistanceLabel.text = "Responsive Distance";
+            trueSizeLabel.text = "True-Size Rendering";
         }
         
         // Subscribe to input action events
-        inputActions.UI.ToggleResponsiveDistance.performed += OnToggleResponsiveDistanceAction;
+        inputActions.UI.ToggleResponsiveDistance.performed += OnToggleTrueSizeAction;  // R key toggles true-size
         inputActions.UI.SetDistance3Yards.performed += OnSetDistance3Yards;
         inputActions.UI.SetDistance7Yards.performed += OnSetDistance7Yards;
         inputActions.UI.SetDistance15Yards.performed += OnSetDistance15Yards;
@@ -132,7 +131,7 @@ public class DistanceMenuManager : MonoBehaviour
     void OnDisable()
     {
         // Unsubscribe from input action events
-        inputActions.UI.ToggleResponsiveDistance.performed -= OnToggleResponsiveDistanceAction;
+        inputActions.UI.ToggleResponsiveDistance.performed -= OnToggleTrueSizeAction;  // R key toggles true-size
         inputActions.UI.SetDistance3Yards.performed -= OnSetDistance3Yards;
         inputActions.UI.SetDistance7Yards.performed -= OnSetDistance7Yards;
         inputActions.UI.SetDistance15Yards.performed -= OnSetDistance15Yards;
@@ -149,8 +148,8 @@ public class DistanceMenuManager : MonoBehaviour
         if (fifteenYardButton != null)
             fifteenYardButton.onClick.RemoveAllListeners();
             
-        if (responsiveDistanceToggle != null)
-            responsiveDistanceToggle.onValueChanged.RemoveListener(OnResponsiveDistanceToggled);
+        if (trueSizeToggle != null)
+            trueSizeToggle.onValueChanged.RemoveListener(OnTrueSizeToggled);
     }
     
     void Update()
@@ -174,10 +173,6 @@ public class DistanceMenuManager : MonoBehaviour
             if (targetController != null && targetController.IsResponsiveDistanceEnabled())
             {
                 targetController.SetResponsiveDistanceEnabled(false);
-                if (responsiveDistanceToggle != null)
-                {
-                    responsiveDistanceToggle.isOn = false;
-                }
                 Debug.Log("DistanceMenuManager: Disabled responsive distance for manual positioning");
             }
             
@@ -194,38 +189,36 @@ public class DistanceMenuManager : MonoBehaviour
         }
     }
     
-    private void OnResponsiveDistanceToggled(bool isOn)
+    private void OnTrueSizeToggled(bool isOn)
     {
-        if (targetController != null)
+        if (distanceManager != null)
         {
-            targetController.SetResponsiveDistanceEnabled(isOn);
-            Debug.Log($"DistanceMenuManager: Responsive Distance set to {isOn}");
-            
-            // No longer resetting position - responsive mode will start from current position
+            distanceManager.SetTrueSizeEnabled(isOn);
+            Debug.Log($"DistanceMenuManager: True-Size Rendering set to {isOn}");
         }
         else
         {
-            Debug.LogError("DistanceMenuManager: No QualificationTargetController found!");
+            Debug.LogError("DistanceMenuManager: No QualificationDistanceManager found!");
         }
     }
     
-    private void ToggleResponsiveDistance()
+    private void ToggleTrueSize()
     {
-        if (responsiveDistanceToggle != null)
+        if (trueSizeToggle != null)
         {
             // Toggle the checkbox state
-            responsiveDistanceToggle.isOn = !responsiveDistanceToggle.isOn;
-            Debug.Log($"DistanceMenuManager: R key pressed - Toggled Responsive Distance to {responsiveDistanceToggle.isOn}");
+            trueSizeToggle.isOn = !trueSizeToggle.isOn;
+            Debug.Log($"DistanceMenuManager: R key pressed - Toggled True-Size Rendering to {trueSizeToggle.isOn}");
         }
         else
         {
-            Debug.LogWarning("DistanceMenuManager: Responsive Distance Toggle UI element not found!");
+            Debug.LogWarning("DistanceMenuManager: True-Size Toggle UI element not found!");
         }
     }
     
-    private void OnToggleResponsiveDistanceAction(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    private void OnToggleTrueSizeAction(UnityEngine.InputSystem.InputAction.CallbackContext context)
     {
-        ToggleResponsiveDistance();
+        ToggleTrueSize();
     }
     
     private void OnSetDistance3Yards(UnityEngine.InputSystem.InputAction.CallbackContext context)
@@ -319,10 +312,10 @@ public class DistanceMenuManager : MonoBehaviour
                 textComponent.text = "15 yard (3)";
         }
         
-        // Update responsive distance label to show R key shortcut
-        if (responsiveDistanceLabel != null)
+        // Update true-size label to show R key shortcut
+        if (trueSizeLabel != null)
         {
-            responsiveDistanceLabel.text = "Responsive Distance (R)";
+            trueSizeLabel.text = "True-Size Rendering (R)";
         }
     }
 }
