@@ -150,25 +150,26 @@ public class InputHandlers : TrackerBase
         // Check if this is a helmet device that requires tracking
         bool isHelmetDevice = appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid());
         
-        // ALWAYS update translation data so Responsive Distance can use it
-        // But only enable IsTracking for camera movement when appropriate
-        translation = deviceOffset;
-        
-        // If QualificationDistanceManager is handling true-size mode, let it manage the camera
+        // If QualificationDistanceManager is handling true-size mode, let it manage the translation completely
         if (qualificationDistanceManager != null && qualificationDistanceManager.IsTrueSizeEnabled())
         {
             // Update the distance manager with device tracking
+            // DO NOT update translation here - let QualificationDistanceManager handle it
             qualificationDistanceManager.UpdateDeviceTracking(deviceOffset);
-            // TSR will manage IsTracking itself
+            // TSR will set the combined translation itself
         }
         else if (isHelmetDevice)
         {
             // Enable tracking for helmet devices (moves camera)
             IsTracking = true;
+            Translation = deviceOffset;
         }
-        // For non-helmet devices when TSR is off, don't auto-enable IsTracking
-        // This prevents camera movement at startup
-        // Responsive Distance will use the translation data without IsTracking
+        else
+        {
+            // For non-helmet devices when TSR is off, update translation for Responsive Distance
+            // but don't enable IsTracking (camera movement)
+            Translation = deviceOffset;
+        }
     }
 
     public void PerformShoot(ohc.uniffi.DeviceRecord device, uint timestamp)
@@ -296,7 +297,16 @@ public class InputHandlers : TrackerBase
                 player.crosshair = new GameObject("CrosshairPlayer" + index).AddComponent<Image>();
                 player.crosshair.transform.SetParent(crosshairCanvas.transform, false);
                 player.crosshair.GetComponent<Image>().sprite = Sprite.Create(crosshairTextures[i], new Rect(0, 0, crosshairTextures[i].width, crosshairTextures[i].height), new Vector2(0.5f, 0.5f), 1.0f);
-                screenGUI.Refresh();
+                
+                // Only refresh screenGUI if it's assigned
+                if (screenGUI != null)
+                {
+                    screenGUI.Refresh();
+                }
+                else
+                {
+                    Debug.LogWarning("InputHandlers: screenGUI is not assigned in the Inspector. Device connected but UI won't refresh.");
+                }
             });
         } catch (Exception e) {
             Debug.LogError("Error: " + e.Message);
@@ -305,8 +315,17 @@ public class InputHandlers : TrackerBase
 
     public async void DeviceDisconnected(ohc.uniffi.DeviceRecord deviceR) {
         await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
-            Destroy(players.Find(p => p.device == deviceR).crosshair.gameObject);
-            screenGUI.Refresh();
+            var player = players.Find(p => p.device == deviceR);
+            if (player != null && player.crosshair != null)
+            {
+                Destroy(player.crosshair.gameObject);
+            }
+            
+            // Only refresh screenGUI if it's assigned
+            if (screenGUI != null)
+            {
+                screenGUI.Refresh();
+            }
         });
         players.RemoveWhere(p => p.device == deviceR);
     }

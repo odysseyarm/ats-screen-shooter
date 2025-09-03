@@ -36,12 +36,12 @@ public class QualificationDistanceManager : MonoBehaviour
     private Vector3 targetTranslation;
     private Vector3 currentTranslation;
     private Vector3 deviceTrackingOffset = Vector3.zero;  // Store the gun/device tracking offset
+    private Vector3 lastKnownRealTracking = Vector3.zero; // Store the last real tracking position
     private Coroutine smoothingCoroutine;
     private bool isInitialized = false;
     
     void Start()
     {
-        Debug.Log($"QualificationDistanceManager Start: trueSizeEnabled = {trueSizeEnabled} (should be false)");
         
         // Find required components
         inputHandlers = FindObjectOfType<InputHandlers>();
@@ -75,10 +75,6 @@ public class QualificationDistanceManager : MonoBehaviour
             if (basicMovement == null)
             {
                 Debug.LogWarning($"QualificationDistanceManager: BasicMovement component not found on {projectionCamera.name}");
-            }
-            else
-            {
-                Debug.Log($"QualificationDistanceManager: Found BasicMovement on {projectionCamera.name}");
             }
         }
         else
@@ -177,7 +173,6 @@ public class QualificationDistanceManager : MonoBehaviour
     public void SetTrueSizeEnabled(bool enabled)
     {
         trueSizeEnabled = enabled;
-        Debug.Log($"QualificationDistanceManager: True-size rendering set to {enabled}");
         
         if (enabled && appModeManager != null && appModeManager.GetCurrentMode() == TargetMode.Qualification)
         {
@@ -228,17 +223,11 @@ public class QualificationDistanceManager : MonoBehaviour
         
         // Only apply if true-size mode is enabled
         if (!trueSizeEnabled)
-        {
-            Debug.Log("QualificationDistanceManager: True-size mode is disabled, skipping distance application");
             return;
-        }
         
         // Only apply if we're in Qualification Mode
         if (appModeManager.GetCurrentMode() != TargetMode.Qualification)
-        {
-            Debug.Log("QualificationDistanceManager: Not in Qualification Mode, skipping distance application");
             return;
-        }
         
         float distanceMeters = GetCurrentDistanceMeters();
         
@@ -246,8 +235,6 @@ public class QualificationDistanceManager : MonoBehaviour
         // This simulates the shooter standing that far from the target
         targetTranslation = new Vector3(0, 0, -distanceMeters + baseCameraOffset);
         
-        Debug.Log($"QualificationDistanceManager: Setting distance to {GetCurrentDistanceYards()} yards ({distanceMeters:F2} meters)");
-        Debug.Log($"QualificationDistanceManager: Target translation: {targetTranslation}");
         
         // Enable tracking mode and apply translation
         EnableTrueSizeMode();
@@ -272,7 +259,6 @@ public class QualificationDistanceManager : MonoBehaviour
         // This is the key - it tells BasicMovement to use our translation values
         inputHandlers.IsTracking = true;
         
-        Debug.Log("QualificationDistanceManager: Enabled true-size mode (IsTracking = true)");
     }
     
     /// <summary>
@@ -300,14 +286,12 @@ public class QualificationDistanceManager : MonoBehaviour
             currentTranslation = Vector3.zero;
             targetTranslation = Vector3.zero;
             
-            Debug.Log("QualificationDistanceManager: Disabled true-size mode and tracking");
         }
         else if (responsiveDistanceActive)
         {
             // Just reset our translation but keep tracking enabled for responsive distance
             currentTranslation = Vector3.zero;
             targetTranslation = Vector3.zero;
-            Debug.Log("QualificationDistanceManager: Disabled true-size mode but kept tracking for responsive distance");
         }
         
         if (smoothingCoroutine != null)
@@ -360,10 +344,12 @@ public class QualificationDistanceManager : MonoBehaviour
             
             currentTranslation = Vector3.Lerp(startTranslation, targetTranslation, t);
             
-            // Apply the translation to InputHandlers
+            // Apply the translation to InputHandlers (combined with device offset)
             if (inputHandlers != null)
             {
-                inputHandlers.Translation = currentTranslation;
+                Vector3 combinedTranslation = currentTranslation + deviceTrackingOffset;
+                inputHandlers.Translation = combinedTranslation;
+                lastKnownRealTracking = combinedTranslation;
             }
             
             yield return null;
@@ -373,7 +359,9 @@ public class QualificationDistanceManager : MonoBehaviour
         currentTranslation = targetTranslation;
         if (inputHandlers != null)
         {
-            inputHandlers.Translation = currentTranslation;
+            Vector3 combinedTranslation = currentTranslation + deviceTrackingOffset;
+            inputHandlers.Translation = combinedTranslation;
+            lastKnownRealTracking = combinedTranslation;
         }
         
         smoothingCoroutine = null;
@@ -412,8 +400,7 @@ public class QualificationDistanceManager : MonoBehaviour
             trueSizeEnabled &&
             appModeManager != null && 
             appModeManager.GetCurrentMode() == TargetMode.Qualification &&
-            inputHandlers != null &&
-            !HasActiveDeviceTracking())
+            inputHandlers != null)
         {
             // Maintain our tracking state and translation
             if (!inputHandlers.IsTracking)
@@ -421,16 +408,37 @@ public class QualificationDistanceManager : MonoBehaviour
                 inputHandlers.IsTracking = true;
             }
             
-            // Only update translation if we're not in a smooth transition AND 
-            // the current translation in InputHandlers doesn't match what we want
-            // This prevents fighting with device tracking updates
-            if (smoothingCoroutine == null)
+            // IMPORTANT: Don't fight with the real tracking system!
+            // Instead of overwriting the translation, we should detect when it's been
+            // changed by the real tracking and update our offset accordingly.
+            
+            Vector3 currentRealTracking = inputHandlers.Translation;
+            
+            // Check if the tracking has been updated by another system (like OdysseyHubClient)
+            if (Vector3.Distance(currentRealTracking, lastKnownRealTracking) > 0.001f &&
+                Vector3.Distance(currentRealTracking, currentTranslation + deviceTrackingOffset) > 0.001f)
             {
-                // Only set if it's significantly different to avoid fighting
-                Vector3 currentInputTranslation = inputHandlers.Translation;
-                if (Vector3.Distance(currentInputTranslation, currentTranslation + deviceTrackingOffset) > 0.001f)
+                // The tracking has been updated by another system
+                // Extract the device movement from the new tracking position
+                // Assume the Z component should maintain our distance offset
+                deviceTrackingOffset = new Vector3(
+                    currentRealTracking.x,
+                    currentRealTracking.y,
+                    currentRealTracking.z - currentTranslation.z
+                );
+                
+                lastKnownRealTracking = currentRealTracking;
+                
+            }
+            else if (smoothingCoroutine == null)
+            {
+                // Only update if we're not smoothing and the values don't match what we expect
+                Vector3 desiredTranslation = currentTranslation + deviceTrackingOffset;
+                
+                if (Vector3.Distance(currentRealTracking, desiredTranslation) > 0.001f)
                 {
-                    inputHandlers.Translation = currentTranslation + deviceTrackingOffset;
+                    inputHandlers.Translation = desiredTranslation;
+                    lastKnownRealTracking = desiredTranslation;
                 }
             }
         }
