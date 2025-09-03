@@ -77,8 +77,11 @@ public class QualificationTargetController : MonoBehaviour
         
         if (inputHandlers != null)
         {
-            
-            if (inputHandlers.IsTracking)
+            // For responsive distance, we use the Translation value to get device position
+            // but we DON'T require IsTracking to be true (which would move the camera)
+            // We just need to check if there's any translation data available
+            Vector3 trackingTranslation = inputHandlers.Translation;
+            if (trackingTranslation != Vector3.zero || inputHandlers.IsTracking)
             {
                 float currentDistance = GetCurrentTrackingDistance();
                 
@@ -103,11 +106,13 @@ public class QualificationTargetController : MonoBehaviour
     
     private float GetCurrentTrackingDistance()
     {
-        if (inputHandlers == null || !inputHandlers.IsTracking)
+        if (inputHandlers == null)
         {
             return 0f;
         }
         
+        // Don't check IsTracking here - we just need the translation data
+        // Responsive distance should work even when camera tracking is disabled
         Vector3 trackingTranslation = inputHandlers.Translation;
         float distance = trackingTranslation.z;
         
@@ -120,17 +125,23 @@ public class QualificationTargetController : MonoBehaviour
         
         if (enabled)
         {
+            // Responsive distance needs device tracking data but should NOT move the camera
+            // We'll keep tracking disabled for camera movement but still get device data
+            // The key is NOT setting inputHandlers.IsTracking = true here!
+            
             // When enabling, use the current position as the new base position
             // This prevents the target from jumping when responsive mode is turned on
             baseZPosition = transform.position.z;
             targetPosition = transform.position;
             lastTrackedDistance = 0f;
             Debug.Log($"QualificationTargetController: Responsive mode enabled, starting from position Z={baseZPosition}");
+            Debug.Log("QualificationTargetController: Note - NOT enabling IsTracking to prevent camera movement");
         }
         else
         {
             // When disabling, keep the target at its current position
             targetPosition = transform.position;
+            Debug.Log("QualificationTargetController: Responsive mode disabled");
         }
     }
     

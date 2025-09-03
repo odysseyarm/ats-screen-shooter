@@ -126,13 +126,18 @@ public class DistanceMenuManager : MonoBehaviour
         // Setup true-size rendering toggle
         if (trueSizeToggle != null)
         {
+            Debug.Log($"DistanceMenuManager OnEnable: trueSizeToggle.isOn = {trueSizeToggle.isOn} BEFORE setting to false");
+            
+            // Force disable true-size rendering on enable
+            trueSizeToggle.isOn = false;
+            
+            // Add listener AFTER setting the value to avoid triggering it
             trueSizeToggle.onValueChanged.AddListener(OnTrueSizeToggled);
             
-            // Start with true-size rendering disabled by default
-            trueSizeToggle.isOn = false;
             if (distanceManager != null)
             {
                 distanceManager.SetTrueSizeEnabled(false);
+                Debug.Log("DistanceMenuManager OnEnable: Forced SetTrueSizeEnabled(false)");
             }
         }
         
@@ -176,8 +181,22 @@ public class DistanceMenuManager : MonoBehaviour
         if (fifteenYardButton != null)
             fifteenYardButton.onClick.RemoveAllListeners();
             
+        if (responsiveDistanceToggle != null)
+            responsiveDistanceToggle.onValueChanged.RemoveListener(OnResponsiveDistanceToggled);
+            
         if (trueSizeToggle != null)
             trueSizeToggle.onValueChanged.RemoveListener(OnTrueSizeToggled);
+    }
+    
+    void OnDestroy()
+    {
+        // Properly dispose of the custom input actions
+        if (toggleTrueSizeAction != null)
+        {
+            toggleTrueSizeAction.performed -= OnToggleTrueSizeAction;
+            toggleTrueSizeAction.Dispose();
+        }
+        
     }
     
     void Update()
