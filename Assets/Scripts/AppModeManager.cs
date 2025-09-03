@@ -116,18 +116,20 @@ public class AppModeManager : MonoBehaviour
         {
             QualificationModeMenu.SetActive(mode == TargetMode.Qualification);
             
-            // When entering Qualification Mode, ensure Responsive Distance is turned off
+            // When entering Qualification Mode, ensure true-size rendering starts disabled
             if (mode == TargetMode.Qualification)
             {
-                // Find the DistanceMenuManager and disable responsive distance
+                // Find the DistanceMenuManager and ensure true-size is disabled by default
                 DistanceMenuManager distanceMenuManager = QualificationModeMenu.GetComponentInChildren<DistanceMenuManager>();
-                if (distanceMenuManager != null && distanceMenuManager.responsiveDistanceToggle != null)
+                if (distanceMenuManager != null && distanceMenuManager.trueSizeToggle != null)
                 {
-                    distanceMenuManager.responsiveDistanceToggle.isOn = false;
-                    Debug.Log("AppModeManager: Disabled Responsive Distance for Qualification Mode");
+                    // True-size rendering starts disabled by default
+                    distanceMenuManager.trueSizeToggle.isOn = false;
+                    Debug.Log("AppModeManager: True-size rendering starts disabled for Qualification Mode");
                 }
                 
-                // Also directly disable it on the QualificationTargetController if it exists
+                // Also directly disable responsive distance on the QualificationTargetController if it exists
+                // (keeping this for backwards compatibility with old responsive distance feature)
                 QualificationTargetController targetController = FindObjectOfType<QualificationTargetController>();
                 if (targetController != null)
                 {
