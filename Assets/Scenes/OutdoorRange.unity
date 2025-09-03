@@ -4080,7 +4080,7 @@ MonoBehaviour:
   DefaultLightingSet: 0
   m_lightingMultiSceneLightingSupport: 1
   m_lightingUpdateInRealtime: 0
-  m_selectedLightingProfileValuesIndex: 0
+  m_selectedLightingProfileValuesIndex: 1
   m_profileType: 1
   m_renamingProfile: 0
   m_lightingEditSettings: 0
