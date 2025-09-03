@@ -11,10 +11,13 @@ public class ExitModalManager : MonoBehaviour
     [Header("Manager References")]
     public AppManager appManager;
     
-    public AppControls inputActions;
+    private AppControls inputActions;
     
     void Awake()
     {
+        // Initialize the input actions - this is the standard pattern for Unity Input System
+        inputActions = new AppControls();
+        
         if (confirmExitButton == null || cancelExitButton == null)
         {
             Debug.LogError("ExitModalManager: Button references not set!");
