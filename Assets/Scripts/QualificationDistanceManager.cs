@@ -59,18 +59,29 @@ public class QualificationDistanceManager : MonoBehaviour
         }
         
         // Find the projection camera and BasicMovement component
-        projectionCamera = GameObject.Find("Main Camera");
+        // Try FlyCam first (the actual camera being used)
+        projectionCamera = GameObject.Find("FlyCam");
+        if (projectionCamera == null)
+        {
+            // Fallback to Main Camera if FlyCam not found
+            projectionCamera = GameObject.Find("Main Camera");
+        }
+        
         if (projectionCamera != null)
         {
             basicMovement = projectionCamera.GetComponent<Apt.Unity.Projection.BasicMovement>();
             if (basicMovement == null)
             {
-                Debug.LogWarning("QualificationDistanceManager: BasicMovement component not found on Main Camera");
+                Debug.LogWarning($"QualificationDistanceManager: BasicMovement component not found on {projectionCamera.name}");
+            }
+            else
+            {
+                Debug.Log($"QualificationDistanceManager: Found BasicMovement on {projectionCamera.name}");
             }
         }
         else
         {
-            Debug.LogWarning("QualificationDistanceManager: Main Camera not found");
+            Debug.LogWarning("QualificationDistanceManager: Neither FlyCam nor Main Camera found");
         }
         
         // Initialize with the first preset distance

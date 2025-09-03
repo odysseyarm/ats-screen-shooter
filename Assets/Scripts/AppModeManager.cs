@@ -116,20 +116,26 @@ public class AppModeManager : MonoBehaviour
         {
             QualificationModeMenu.SetActive(mode == TargetMode.Qualification);
             
-            // When entering Qualification Mode, ensure true-size rendering starts disabled
+            // When entering Qualification Mode, ensure toggles start disabled by default
             if (mode == TargetMode.Qualification)
             {
-                // Find the DistanceMenuManager and ensure true-size is disabled by default
+                // Find the DistanceMenuManager and ensure both toggles are off by default
                 DistanceMenuManager distanceMenuManager = QualificationModeMenu.GetComponentInChildren<DistanceMenuManager>();
-                if (distanceMenuManager != null && distanceMenuManager.trueSizeToggle != null)
+                if (distanceMenuManager != null)
                 {
-                    // True-size rendering starts disabled by default
-                    distanceMenuManager.trueSizeToggle.isOn = false;
-                    Debug.Log("AppModeManager: True-size rendering starts disabled for Qualification Mode");
+                    if (distanceMenuManager.trueSizeToggle != null)
+                    {
+                        distanceMenuManager.trueSizeToggle.isOn = false;
+                        Debug.Log("AppModeManager: True-size rendering starts disabled for Qualification Mode");
+                    }
+                    if (distanceMenuManager.responsiveDistanceToggle != null)
+                    {
+                        distanceMenuManager.responsiveDistanceToggle.isOn = false;
+                        Debug.Log("AppModeManager: Responsive Distance starts disabled for Qualification Mode");
+                    }
                 }
                 
                 // Also directly disable responsive distance on the QualificationTargetController if it exists
-                // (keeping this for backwards compatibility with old responsive distance feature)
                 QualificationTargetController targetController = FindObjectOfType<QualificationTargetController>();
                 if (targetController != null)
                 {
