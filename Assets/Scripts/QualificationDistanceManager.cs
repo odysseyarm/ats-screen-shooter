@@ -10,6 +10,10 @@ public class QualificationDistanceManager : MonoBehaviour
     [Tooltip("Current selected distance index")]
     private int currentDistanceIndex = 0;
     
+    [Header("True-Size Mode")]
+    [Tooltip("Whether true-size rendering is enabled")]
+    private bool trueSizeEnabled = false;
+    
     [Header("Conversion Settings")]
     [Tooltip("Conversion factor from yards to meters")]
     private const float YARDS_TO_METERS = 0.9144f;
@@ -83,7 +87,7 @@ public class QualificationDistanceManager : MonoBehaviour
     
     void OnEnable()
     {
-        if (isInitialized && appModeManager != null && appModeManager.GetCurrentMode() == TargetMode.Qualification)
+        if (isInitialized && trueSizeEnabled && appModeManager != null && appModeManager.GetCurrentMode() == TargetMode.Qualification)
         {
             EnableTrueSizeMode();
         }
@@ -152,12 +156,47 @@ public class QualificationDistanceManager : MonoBehaviour
     }
     
     /// <summary>
+    /// Enables or disables true-size rendering mode
+    /// </summary>
+    public void SetTrueSizeEnabled(bool enabled)
+    {
+        trueSizeEnabled = enabled;
+        Debug.Log($"QualificationDistanceManager: True-size rendering set to {enabled}");
+        
+        if (enabled && appModeManager != null && appModeManager.GetCurrentMode() == TargetMode.Qualification)
+        {
+            // Apply current distance when enabling
+            ApplyCurrentDistance();
+        }
+        else if (!enabled)
+        {
+            // Disable true-size mode
+            DisableTrueSizeMode();
+        }
+    }
+    
+    /// <summary>
+    /// Gets whether true-size rendering is enabled
+    /// </summary>
+    public bool IsTrueSizeEnabled()
+    {
+        return trueSizeEnabled;
+    }
+    
+    /// <summary>
     /// Applies the current distance setting
     /// </summary>
     private void ApplyCurrentDistance()
     {
         if (!isInitialized || appModeManager == null)
             return;
+        
+        // Only apply if true-size mode is enabled
+        if (!trueSizeEnabled)
+        {
+            Debug.Log("QualificationDistanceManager: True-size mode is disabled, skipping distance application");
+            return;
+        }
         
         // Only apply if we're in Qualification Mode
         if (appModeManager.GetCurrentMode() != TargetMode.Qualification)
@@ -309,9 +348,10 @@ public class QualificationDistanceManager : MonoBehaviour
     
     void Update()
     {
-        // Keep applying our translation if we're in Qualification Mode
+        // Keep applying our translation if we're in Qualification Mode and true-size is enabled
         // This ensures our values aren't overridden by other systems
         if (isInitialized && 
+            trueSizeEnabled &&
             appModeManager != null && 
             appModeManager.GetCurrentMode() == TargetMode.Qualification &&
             inputHandlers != null &&
