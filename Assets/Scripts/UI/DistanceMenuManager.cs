@@ -22,9 +22,10 @@ public class DistanceMenuManager : MonoBehaviour
     [Header("Target Reference")]
     public GameObject b27Target;
     private QualificationTargetController targetController;
+    private QualificationDistanceManager distanceManager;  // For true-size rendering
     
     [Header("Distance Settings")]
-    [SerializeField] private float threeYardDistance = 5f;
+    [SerializeField] private float threeYardDistance = 3f;  // Changed to actual yards
     [SerializeField] private float sevenYardDistance = 7f;
     [SerializeField] private float fifteenYardDistance = 15f;
     
@@ -73,6 +74,13 @@ public class DistanceMenuManager : MonoBehaviour
                 meshFix = b27Target.AddComponent<QualificationTargetMeshFix>();
                 Debug.Log("DistanceMenuManager: Added QualificationTargetMeshFix to ensure MeshCollider has mesh");
             }
+        }
+        
+        // Find the QualificationDistanceManager for true-size rendering
+        distanceManager = FindObjectOfType<QualificationDistanceManager>();
+        if (distanceManager == null)
+        {
+            Debug.LogWarning("DistanceMenuManager: QualificationDistanceManager not found - true-size rendering will not work");
         }
         
         inputActions = new AppControls();
@@ -151,10 +159,17 @@ public class DistanceMenuManager : MonoBehaviour
         // No need to poll keyboard in Update anymore
     }
     
-    private void SetTargetDistance(float distance)
+    private void SetTargetDistance(float distanceYards)
     {
-        if (b27Target != null)
+        // Use QualificationDistanceManager for true-size rendering if available
+        if (distanceManager != null)
         {
+            distanceManager.SetDistanceYards(distanceYards);
+            Debug.Log($"DistanceMenuManager: Set true-size distance to {distanceYards} yards");
+        }
+        else if (b27Target != null)
+        {
+            // Fallback to old method if QualificationDistanceManager not available
             // Disable responsive distance when manually setting position
             if (targetController != null && targetController.IsResponsiveDistanceEnabled())
             {
@@ -166,14 +181,16 @@ public class DistanceMenuManager : MonoBehaviour
                 Debug.Log("DistanceMenuManager: Disabled responsive distance for manual positioning");
             }
             
+            // Note: This is the old method that just moves the target object
+            // For true-size rendering, we should be moving the camera instead
             Vector3 currentPosition = b27Target.transform.position;
-            currentPosition.z = distance;
+            currentPosition.z = distanceYards + 4f;  // Add offset for old method
             b27Target.transform.position = currentPosition;
-            Debug.Log($"DistanceMenuManager: Set target distance to {distance} yards");
+            Debug.Log($"DistanceMenuManager: Fallback - Set target position to Z={currentPosition.z}");
         }
         else
         {
-            Debug.LogError("DistanceMenuManager: Cannot set distance - B27 Target is null!");
+            Debug.LogError("DistanceMenuManager: Cannot set distance - No QualificationDistanceManager and B27 Target is null!");
         }
     }
     

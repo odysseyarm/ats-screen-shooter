@@ -23,6 +23,7 @@ public class AppModeManager : MonoBehaviour
     private TargetModeMenuManager targetModeMenuManager;
     private InputAction toggleModeAction;
     private ScreenShooter screenShooter;
+    private QualificationDistanceManager qualificationDistanceManager;
     
     void Awake()
     {
@@ -70,6 +71,13 @@ public class AppModeManager : MonoBehaviour
         if (screenShooter == null)
         {
             Debug.LogWarning("AppModeManager: ScreenShooter not found in scene");
+        }
+        
+        // Find the QualificationDistanceManager for true-size rendering
+        qualificationDistanceManager = FindObjectOfType<QualificationDistanceManager>();
+        if (qualificationDistanceManager == null)
+        {
+            Debug.LogWarning("AppModeManager: QualificationDistanceManager not found in scene");
         }
         
         SetMode(TargetMode.None);
@@ -135,6 +143,12 @@ public class AppModeManager : MonoBehaviour
         if (targetModeMenuManager != null)
         {
             targetModeMenuManager.UpdateButtonHighlight(mode);
+        }
+        
+        // Notify QualificationDistanceManager of mode change
+        if (qualificationDistanceManager != null)
+        {
+            qualificationDistanceManager.OnModeChanged(mode);
         }
         
         Debug.Log($"App Mode changed to: {mode}");
