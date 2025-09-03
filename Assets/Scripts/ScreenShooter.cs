@@ -10,8 +10,14 @@ public class ScreenShooter : MonoBehaviour
     [SerializeField]
     [Tooltip("Optional: Parent transform for bullet holes. If set, bullet holes will be instantiated as children of this transform instead of the pool.")]
     public Transform BulletHoleParent;
+    
+    [Header("Reactive Mode Settings")]
+    [SerializeField]
+    [Tooltip("Scale multiplier for bullet holes in Reactive Mode")]
+    private float reactiveModeScale = 2.5f; // 250%
 
     private GameObject bulletHolePool;
+    private AppModeManager appModeManager;
 
     public void CreateShot(Vector2 screenPoint) {
         Ray ray = Camera.main.ScreenPointToRay(screenPoint);
@@ -48,12 +54,19 @@ public class ScreenShooter : MonoBehaviour
             
             if (BulletHole != null)
             {
-                Instantiate(
+                GameObject bulletHole = Instantiate(
                     BulletHole,
                     hit.point + hit.normal * .01f,
                     Quaternion.FromToRotation(Vector3.up, hit.normal),
                     parentTransform
                 );
+                
+                // Scale up bullet holes in Reactive Mode
+                if (appModeManager != null && appModeManager.GetCurrentMode() == TargetMode.Reactive)
+                {
+                    bulletHole.transform.localScale *= reactiveModeScale;
+                    Debug.Log($"Scaled bullet hole to {reactiveModeScale}x for Reactive Mode");
+                }
             }
         }
     }
@@ -73,6 +86,15 @@ public class ScreenShooter : MonoBehaviour
                 }
             }
         }
+        
+        // Clear bullet holes that may be parented to target objects (like Body1)
+        // This handles the case where bullet holes are parented directly to hit objects
+        GameObject[] allBulletHoles = GameObject.FindObjectsOfType<GameObject>();
+        foreach (GameObject obj in allBulletHoles) {
+            if (obj.name.Contains("BulletHole(Clone)")) {
+                UnityEngine.Object.Destroy(obj);
+            }
+        }
     }
 
     // Start is called before the first frame update
@@ -80,6 +102,13 @@ public class ScreenShooter : MonoBehaviour
     {
         bulletHolePool = new GameObject();
         bulletHolePool.name = "BulletHolePool";
+        
+        // Find the AppModeManager to check current mode
+        appModeManager = FindObjectOfType<AppModeManager>();
+        if (appModeManager == null)
+        {
+            Debug.LogWarning("ScreenShooter: AppModeManager not found in scene");
+        }
     }
 
     // Update is called once per frame
