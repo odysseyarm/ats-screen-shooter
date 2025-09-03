@@ -28,5 +28,6 @@ namespace Apt.Unity.Projection
                 projectionCamera.transform.localPosition = initialLocalPosition + Tracker.Translation;
             }
         }
+
     }
 }

@@ -4080,7 +4080,7 @@ MonoBehaviour:
   DefaultLightingSet: 0
   m_lightingMultiSceneLightingSupport: 1
   m_lightingUpdateInRealtime: 0
-  m_selectedLightingProfileValuesIndex: 1
+  m_selectedLightingProfileValuesIndex: 0
   m_profileType: 1
   m_renamingProfile: 0
   m_lightingEditSettings: 0
@@ -8795,43 +8795,6 @@ MonoBehaviour:
   m_minRefreshMS: 100
   m_maxRefreshMS: 5000
   m_followTransform: 1
---- !u!84 &861734320
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 48
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 0
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &868412505
 GameObject:
   m_ObjectHideFlags: 0
@@ -9343,6 +9306,43 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 917849106}
   m_CullTransparentMesh: 1
+--- !u!84 &934538645
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 48
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!114 &937156330
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9692,6 +9692,7 @@ GameObject:
   - component: {fileID: 973326026}
   - component: {fileID: 973326035}
   - component: {fileID: 973326034}
+  - component: {fileID: 973326036}
   m_Layer: 0
   m_Name: FlyCam
   m_TagString: MainCamera
@@ -9939,6 +9940,22 @@ MonoBehaviour:
   ProjectionScreen: {fileID: 0}
   ClampNearPlane: 1
   DrawGizmos: 1
+--- !u!114 &973326036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 973326024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7247fc8b38dccb34494a719e48cb4f4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lastPosition: {x: 0, y: 0, z: 0}
+  lastLocalPosition: {x: 0, y: 0, z: 0}
+  frameCount: 0
+  lastLogTime: 0
 --- !u!4 &975049109 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 663232444366738389, guid: e9c709b74c129da49831d190fcd5f76a,
@@ -35219,7 +35236,7 @@ MonoBehaviour:
     - 0
     m_textureResolution: 512
   m_gameCamera: {fileID: 973326033}
-  m_reflectionTexture: {fileID: 861734320}
+  m_reflectionTexture: {fileID: 934538645}
   m_distances:
   - 500
   - 500
@@ -39802,6 +39819,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2514901884579747186, guid: 97218c6c6b5a58e4cb094e4e276d2cfb,
+        type: 3}
+      propertyPath: screenGUI
+      value: 
+      objectReference: {fileID: 1006813160}
     - target: {fileID: 3346510236571467050, guid: 97218c6c6b5a58e4cb094e4e276d2cfb,
         type: 3}
       propertyPath: BulletHoleParent
