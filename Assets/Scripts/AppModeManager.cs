@@ -22,6 +22,7 @@ public class AppModeManager : MonoBehaviour
     private TargetMode currentMode = TargetMode.None;
     private TargetModeMenuManager targetModeMenuManager;
     private InputAction toggleModeAction;
+    private ScreenShooter screenShooter;
     
     void Awake()
     {
@@ -64,6 +65,13 @@ public class AppModeManager : MonoBehaviour
             Debug.LogError("TargetModeMenu is not assigned in AppModeManager!");
         }
         
+        // Find the ScreenShooter to clear bullet holes on mode switch
+        screenShooter = FindObjectOfType<ScreenShooter>();
+        if (screenShooter == null)
+        {
+            Debug.LogWarning("AppModeManager: ScreenShooter not found in scene");
+        }
+        
         SetMode(TargetMode.None);
     }
     
@@ -74,6 +82,16 @@ public class AppModeManager : MonoBehaviour
     
     public void SetMode(TargetMode mode)
     {
+        // Clear all bullet holes when switching between Qualification and Reactive modes
+        if (currentMode != mode && 
+            currentMode != TargetMode.None && 
+            mode != TargetMode.None &&
+            screenShooter != null)
+        {
+            screenShooter.ClearBulletHoles();
+            Debug.Log($"Cleared bullet holes when switching from {currentMode} to {mode}");
+        }
+        
         currentMode = mode;
         
         if (QualificationMode != null)
