@@ -41,6 +41,8 @@ public class QualificationDistanceManager : MonoBehaviour
     
     void Start()
     {
+        Debug.Log($"QualificationDistanceManager Start: trueSizeEnabled = {trueSizeEnabled} (should be false)");
+        
         // Find required components
         inputHandlers = FindObjectOfType<InputHandlers>();
         if (inputHandlers == null)
@@ -90,11 +92,8 @@ public class QualificationDistanceManager : MonoBehaviour
         
         isInitialized = true;
         
-        // Apply initial distance if we're already in Qualification Mode
-        if (appModeManager.GetCurrentMode() == TargetMode.Qualification)
-        {
-            ApplyCurrentDistance();
-        }
+        // Don't apply any distance on start - wait for explicit enable
+        // TSR should only activate when user toggles it on
     }
     
     void OnEnable()
@@ -122,7 +121,12 @@ public class QualificationDistanceManager : MonoBehaviour
         }
         
         currentDistanceIndex = index;
-        ApplyCurrentDistance();
+        
+        // Only apply distance if TSR is actually enabled
+        if (trueSizeEnabled)
+        {
+            ApplyCurrentDistance();
+        }
     }
     
     /// <summary>
@@ -279,16 +283,31 @@ public class QualificationDistanceManager : MonoBehaviour
         if (inputHandlers == null)
             return;
         
-        // Only disable tracking if we're not actually tracking a device
-        // This prevents interfering with actual helmet/device tracking
-        if (!HasActiveDeviceTracking())
+        // Check if responsive distance is also using tracking
+        bool responsiveDistanceActive = false;
+        QualificationTargetController targetController = FindObjectOfType<QualificationTargetController>();
+        if (targetController != null)
+        {
+            responsiveDistanceActive = targetController.IsResponsiveDistanceEnabled();
+        }
+        
+        // Only disable tracking if we're not actually tracking a device AND responsive distance is not active
+        // This prevents interfering with actual helmet/device tracking and responsive distance
+        if (!HasActiveDeviceTracking() && !responsiveDistanceActive)
         {
             inputHandlers.IsTracking = false;
             inputHandlers.Translation = Vector3.zero;
             currentTranslation = Vector3.zero;
             targetTranslation = Vector3.zero;
             
-            Debug.Log("QualificationDistanceManager: Disabled true-size mode");
+            Debug.Log("QualificationDistanceManager: Disabled true-size mode and tracking");
+        }
+        else if (responsiveDistanceActive)
+        {
+            // Just reset our translation but keep tracking enabled for responsive distance
+            currentTranslation = Vector3.zero;
+            targetTranslation = Vector3.zero;
+            Debug.Log("QualificationDistanceManager: Disabled true-size mode but kept tracking for responsive distance");
         }
         
         if (smoothingCoroutine != null)
@@ -367,12 +386,20 @@ public class QualificationDistanceManager : MonoBehaviour
     {
         if (newMode == TargetMode.Qualification)
         {
-            // Entering Qualification Mode
-            ApplyCurrentDistance();
+            // Entering Qualification Mode - only apply if TSR is enabled
+            if (trueSizeEnabled)
+            {
+                ApplyCurrentDistance();
+            }
         }
         else
         {
-            // Leaving Qualification Mode
+            // Leaving Qualification Mode - always disable TSR
+            if (trueSizeEnabled)
+            {
+                // Force disable TSR when leaving qualification mode
+                SetTrueSizeEnabled(false);
+            }
             DisableTrueSizeMode();
         }
     }
@@ -394,10 +421,17 @@ public class QualificationDistanceManager : MonoBehaviour
                 inputHandlers.IsTracking = true;
             }
             
-            // Only update if we're not in a smooth transition
+            // Only update translation if we're not in a smooth transition AND 
+            // the current translation in InputHandlers doesn't match what we want
+            // This prevents fighting with device tracking updates
             if (smoothingCoroutine == null)
             {
-                inputHandlers.Translation = currentTranslation;
+                // Only set if it's significantly different to avoid fighting
+                Vector3 currentInputTranslation = inputHandlers.Translation;
+                if (Vector3.Distance(currentInputTranslation, currentTranslation + deviceTrackingOffset) > 0.001f)
+                {
+                    inputHandlers.Translation = currentTranslation + deviceTrackingOffset;
+                }
             }
         }
     }

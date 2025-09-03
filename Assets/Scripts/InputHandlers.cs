@@ -147,24 +147,28 @@ public class InputHandlers : TrackerBase
         // Calculate the device offset
         Vector3 deviceOffset = zero_translation + unityPose.position;
         
-        // If QualificationDistanceManager is handling true-size mode, let it manage the translation
+        // Check if this is a helmet device that requires tracking
+        bool isHelmetDevice = appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid());
+        
+        // ALWAYS update translation data so Responsive Distance can use it
+        // But only enable IsTracking for camera movement when appropriate
+        translation = deviceOffset;
+        
+        // If QualificationDistanceManager is handling true-size mode, let it manage the camera
         if (qualificationDistanceManager != null && qualificationDistanceManager.IsTrueSizeEnabled())
         {
             // Update the distance manager with device tracking
             qualificationDistanceManager.UpdateDeviceTracking(deviceOffset);
+            // TSR will manage IsTracking itself
         }
-        else
+        else if (isHelmetDevice)
         {
-            // Normal tracking behavior
+            // Enable tracking for helmet devices (moves camera)
             IsTracking = true;
-            translation = deviceOffset;
         }
-        
-        // Original helmet check can stay for other purposes if needed
-        if (appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid()))
-        {
-            // Helmet-specific logic if needed
-        }
+        // For non-helmet devices when TSR is off, don't auto-enable IsTracking
+        // This prevents camera movement at startup
+        // Responsive Distance will use the translation data without IsTracking
     }
 
     public void PerformShoot(ohc.uniffi.DeviceRecord device, uint timestamp)
