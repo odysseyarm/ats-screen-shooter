@@ -276,6 +276,10 @@ public class InputHandlers : TrackerBase
 
     public async Task DeviceConnected(ohc.uniffi.DeviceRecord device) {
         try {
+            if (client == null || client.client == null) {
+                Debug.LogError("DeviceConnected: OdysseyHubClient is not initialized yet");
+                return;
+            }
             var shotDelayMS = await client.client.GetShotDelay(device);
             await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
                 var player = new Player();
