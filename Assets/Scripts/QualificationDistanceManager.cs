@@ -102,7 +102,9 @@ public class QualificationDistanceManager : MonoBehaviour
     
     void OnDisable()
     {
-        DisableTrueSizeMode();
+        // When disabling, immediately reset without smooth transition
+        // (can't start coroutines on disabled GameObjects)
+        DisableTrueSizeModeImmediate();
     }
     
     /// <summary>
@@ -262,17 +264,47 @@ public class QualificationDistanceManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Disables the true-size rendering mode
+    /// Disables the true-size rendering mode with smooth transition
     /// </summary>
     private void DisableTrueSizeMode()
     {
         if (inputHandlers == null)
             return;
         
-        // Set target to home position (zero)
-        targetTranslation = Vector3.zero;
-        deviceTrackingOffset = Vector3.zero;
-        
+        // Only start smooth transition if GameObject is active
+        if (gameObject.activeInHierarchy)
+        {
+            // Set target to home position (zero)
+            targetTranslation = Vector3.zero;
+            deviceTrackingOffset = Vector3.zero;
+            
+            // Stop any ongoing smooth transitions
+            if (smoothingCoroutine != null)
+            {
+                StopCoroutine(smoothingCoroutine);
+                smoothingCoroutine = null;
+            }
+            
+            // Start smooth transition back to home
+            // The transition coroutine will handle all the cleanup
+            smoothingCoroutine = StartCoroutine(SmoothTransitionToHome());
+        }
+        else
+        {
+            // If GameObject is not active, reset immediately
+            DisableTrueSizeModeImmediate();
+        }
+    }
+    
+    /// <summary>
+    /// Immediately disables true-size rendering mode without transition
+    /// Used when GameObject is being disabled
+    /// </summary>
+    private void DisableTrueSizeModeImmediate()
+    {
+        if (inputHandlers == null)
+            return;
+            
         // Stop any ongoing smooth transitions
         if (smoothingCoroutine != null)
         {
@@ -280,9 +312,37 @@ public class QualificationDistanceManager : MonoBehaviour
             smoothingCoroutine = null;
         }
         
-        // Start smooth transition back to home
-        // The transition coroutine will handle all the cleanup
-        smoothingCoroutine = StartCoroutine(SmoothTransitionToHome());
+        // Reset all state immediately
+        currentTranslation = Vector3.zero;
+        targetTranslation = Vector3.zero;
+        deviceTrackingOffset = Vector3.zero;
+        
+        // Check if other systems are using tracking
+        bool responsiveDistanceActive = false;
+        QualificationTargetController targetController = FindObjectOfType<QualificationTargetController>();
+        if (targetController != null)
+        {
+            responsiveDistanceActive = targetController.IsResponsiveDistanceEnabled();
+        }
+        
+        bool hasActiveDevice = HasActiveDeviceTracking();
+        
+        // Only manage the tracking system if we're the sole user
+        if (!hasActiveDevice && !responsiveDistanceActive)
+        {
+            // We can safely disable tracking and reset translation
+            inputHandlers.IsTracking = false;
+            inputHandlers.Translation = Vector3.zero;
+        }
+        else if (responsiveDistanceActive && !hasActiveDevice)
+        {
+            // Responsive distance is active but no real device
+            // Remove only our Z-axis contribution
+            Vector3 currentTrans = inputHandlers.Translation;
+            inputHandlers.Translation = new Vector3(currentTrans.x, currentTrans.y, 0);
+        }
+        
+        lastKnownRealTracking = inputHandlers.Translation;
     }
     
     /// <summary>
