@@ -72,7 +72,7 @@ public class FlashlightController : MonoBehaviour
         }
         else
         {
-            Debug.Log($"[FlashlightController] InputHandlers found. Responsive Distance is {(responsiveDistanceEnabled ? "ENABLED" : "DISABLED")}");
+        // InputHandlers found, responsive distance ready
         }
         
         GameObject projectionCamera = GameObject.Find("ProjectionPlaneCamera");
@@ -90,12 +90,7 @@ public class FlashlightController : MonoBehaviour
         targetPosition = transform.position;
         targetPosition.z = baseZPosition;
         
-        Debug.Log($"[FlashlightController] Initialized with:" +
-            $"\n  GameObject Name: {gameObject.name}" +
-            $"\n  Initial Position: {transform.position}" +
-            $"\n  Base Z Position: {baseZPosition}" +
-            $"\n  Scaling Ratio: {distanceScalingRatio}" +
-            $"\n  Min/Max Z: [{minZPosition}, {maxZPosition}]");
+        // FlashlightController initialized
     }
     
     void Update()
@@ -122,14 +117,7 @@ public class FlashlightController : MonoBehaviour
                     targetPosition.z = Mathf.Clamp(newZ, minZPosition, maxZPosition);
                     lastTrackedDistance = currentDistance;
                     
-                    Debug.Log($"[FlashlightController] GameObject Movement Update:" +
-                        $"\n  GameObject: {gameObject.name}" +
-                        $"\n  Tracking Distance: {currentDistance:F3}" +
-                        $"\n  Scaling Ratio: {distanceScalingRatio}" +
-                        $"\n  Base Z: {baseZPosition}" +
-                        $"\n  Unclamped Z: {unclampedZ:F3}" +
-                        $"\n  Target Z (clamped): {targetPosition.z:F3}" +
-                        $"\n  Min/Max Z: [{minZPosition}, {maxZPosition}]");
+                    // Position updated based on tracking distance
                 }
             }
             
@@ -137,15 +125,7 @@ public class FlashlightController : MonoBehaviour
             Vector3 smoothedPosition = Vector3.SmoothDamp(transform.position, targetPosition, ref currentVelocity, smoothingFactor);
             transform.position = smoothedPosition;
             
-            // Log GameObject position every second
-            if (Time.frameCount % 60 == 0)
-            {
-                Debug.Log($"[FlashlightController] GameObject Position:" +
-                    $"\n  Name: {gameObject.name}" +
-                    $"\n  Current Position: {transform.position}" +
-                    $"\n  Target Position: {targetPosition}" +
-                    $"\n  Is Moving: {currentVelocity.magnitude > 0.001f}");
-            }
+            // Position smoothing applied
         }
         
         // Handle flashlight aiming (separate from GameObject movement)
@@ -193,14 +173,7 @@ public class FlashlightController : MonoBehaviour
                             
                             flashlightLight.intensity = intensity;
                             
-                            // Log the actual light position vs GameObject position
-                            if (Time.frameCount % 60 == 0)
-                            {
-                                Debug.Log($"[FlashlightController] Light vs GameObject:" +
-                                    $"\n  GameObject ({gameObject.name}) Pos: {transform.position}" +
-                                    $"\n  Light Actual Pos: {flashlightLight.transform.position}" +
-                                    $"\n  Offset from GameObject: {flashlightLight.transform.position - transform.position}");
-                            }
+                            // Light position updated
                         }
                         
                         break;
@@ -246,7 +219,7 @@ public class FlashlightController : MonoBehaviour
         // Store the attachment point but DON'T parent to it
         // This allows the flashlight GameObject to move independently
         attachmentPoint = target;
-        Debug.LogWarning($"[FlashlightController] AttachToTransform called but NOT parenting {gameObject.name} to {target.name} to allow independent Z movement");
+        // Attachment point stored without parenting to allow independent movement
     }
     
     public void ToggleFlashlight()
@@ -314,11 +287,11 @@ public class FlashlightController : MonoBehaviour
             // Reset GameObject to base Z position when disabling
             targetPosition = transform.position;
             targetPosition.z = baseZPosition;
-            Debug.Log($"[FlashlightController] Responsive Distance Disabled. Resetting {gameObject.name} to Z={baseZPosition}");
+            // Responsive distance disabled, position reset
         }
         else
         {
-            Debug.Log($"[FlashlightController] Responsive Distance Enabled for {gameObject.name}");
+            // Responsive distance enabled
         }
     }
     
