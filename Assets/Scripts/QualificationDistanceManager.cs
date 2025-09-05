@@ -269,8 +269,7 @@ public class QualificationDistanceManager : MonoBehaviour
         if (inputHandlers == null)
             return;
         
-        // Always reset our true-size specific state
-        currentTranslation = Vector3.zero;
+        // Set target to home position (zero)
         targetTranslation = Vector3.zero;
         deviceTrackingOffset = Vector3.zero;
         
@@ -281,32 +280,9 @@ public class QualificationDistanceManager : MonoBehaviour
             smoothingCoroutine = null;
         }
         
-        // Check if other systems are using tracking
-        bool responsiveDistanceActive = false;
-        QualificationTargetController targetController = FindObjectOfType<QualificationTargetController>();
-        if (targetController != null)
-        {
-            responsiveDistanceActive = targetController.IsResponsiveDistanceEnabled();
-        }
-        
-        bool hasActiveDevice = HasActiveDeviceTracking();
-        
-        // Only manage the tracking system if we're the sole user
-        if (!hasActiveDevice && !responsiveDistanceActive)
-        {
-            // We can safely disable tracking and reset translation
-            inputHandlers.IsTracking = false;
-            inputHandlers.Translation = Vector3.zero;
-        }
-        else if (responsiveDistanceActive && !hasActiveDevice)
-        {
-            // Responsive distance is active but no real device
-            // Remove only our Z-axis contribution (distance offset)
-            Vector3 currentTrans = inputHandlers.Translation;
-            inputHandlers.Translation = new Vector3(currentTrans.x, currentTrans.y, 0);
-        }
-        // If there's active device tracking, don't touch IsTracking or Translation
-        // as they're being managed by the device tracking system
+        // Start smooth transition back to home
+        // The transition coroutine will handle all the cleanup
+        smoothingCoroutine = StartCoroutine(SmoothTransitionToHome());
     }
     
     /// <summary>
@@ -370,6 +346,88 @@ public class QualificationDistanceManager : MonoBehaviour
             Vector3 combinedTranslation = currentTranslation + deviceTrackingOffset;
             inputHandlers.Translation = combinedTranslation;
             lastKnownRealTracking = combinedTranslation;
+        }
+        
+        smoothingCoroutine = null;
+    }
+    
+    /// <summary>
+    /// Smoothly transitions the camera back to home position
+    /// </summary>
+    private IEnumerator SmoothTransitionToHome()
+    {
+        float elapsedTime = 0;
+        Vector3 startTranslation = currentTranslation;
+        
+        while (elapsedTime < smoothingTime)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / smoothingTime;
+            
+            // Use smooth step for nicer transition
+            t = t * t * (3f - 2f * t);
+            
+            currentTranslation = Vector3.Lerp(startTranslation, Vector3.zero, t);
+            
+            // Apply the translation to InputHandlers
+            if (inputHandlers != null)
+            {
+                // Check if other systems need tracking during our transition
+                bool responsiveDistanceActive = false;
+                QualificationTargetController targetController = FindObjectOfType<QualificationTargetController>();
+                if (targetController != null)
+                {
+                    responsiveDistanceActive = targetController.IsResponsiveDistanceEnabled();
+                }
+                
+                bool hasActiveDevice = HasActiveDeviceTracking();
+                
+                // Only update translation if we're still managing it
+                if (!hasActiveDevice)
+                {
+                    if (responsiveDistanceActive)
+                    {
+                        // Keep X and Y from responsive distance, only reset Z
+                        Vector3 currentTrans = inputHandlers.Translation;
+                        inputHandlers.Translation = new Vector3(currentTrans.x, currentTrans.y, currentTranslation.z);
+                    }
+                    else
+                    {
+                        inputHandlers.Translation = currentTranslation;
+                    }
+                    lastKnownRealTracking = inputHandlers.Translation;
+                }
+            }
+            
+            yield return null;
+        }
+        
+        // Ensure we end at exactly home position
+        currentTranslation = Vector3.zero;
+        targetTranslation = Vector3.zero;
+        
+        // Final cleanup
+        bool finalResponsiveDistanceActive = false;
+        QualificationTargetController finalTargetController = FindObjectOfType<QualificationTargetController>();
+        if (finalTargetController != null)
+        {
+            finalResponsiveDistanceActive = finalTargetController.IsResponsiveDistanceEnabled();
+        }
+        
+        bool finalHasActiveDevice = HasActiveDeviceTracking();
+        
+        if (!finalHasActiveDevice && !finalResponsiveDistanceActive)
+        {
+            // We can safely disable tracking and reset translation
+            inputHandlers.IsTracking = false;
+            inputHandlers.Translation = Vector3.zero;
+        }
+        else if (finalResponsiveDistanceActive && !finalHasActiveDevice)
+        {
+            // Responsive distance is active but no real device
+            // Remove only our Z-axis contribution
+            Vector3 currentTrans = inputHandlers.Translation;
+            inputHandlers.Translation = new Vector3(currentTrans.x, currentTrans.y, 0);
         }
         
         smoothingCoroutine = null;
