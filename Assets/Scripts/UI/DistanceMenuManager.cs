@@ -222,10 +222,9 @@ public class DistanceMenuManager : MonoBehaviour
             // For true-size rendering, we should be moving the camera instead
             Vector3 currentPosition = b27Target.transform.position;
             
-            // Map the yard distances to Z positions in the scene
-            // Using the original scale where distances are offset by +4
-            // This maintains compatibility with existing scene setup
-            float targetZ = distanceYards + 4f;  // Original formula restored
+            // Map the yard distances directly to Z positions in the scene
+            // 3 yards = Z position 3, 7 yards = Z position 7, etc.
+            float targetZ = distanceYards;
             
             currentPosition.z = targetZ;
             b27Target.transform.position = currentPosition;
