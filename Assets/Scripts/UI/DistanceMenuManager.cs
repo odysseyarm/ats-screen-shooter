@@ -207,13 +207,8 @@ public class DistanceMenuManager : MonoBehaviour
     
     private void SetTargetDistance(float distanceYards)
     {
-        // Use QualificationDistanceManager for true-size rendering if available
-        if (distanceManager != null)
-        {
-            distanceManager.SetDistanceYards(distanceYards);
-            Debug.Log($"DistanceMenuManager: Set true-size distance to {distanceYards} yards");
-        }
-        else if (b27Target != null)
+        // Always move the target to the appropriate position
+        if (b27Target != null)
         {
             // Fallback to old method if QualificationDistanceManager not available
             // Disable responsive distance when manually setting position
@@ -226,13 +221,34 @@ public class DistanceMenuManager : MonoBehaviour
             // Note: This is the old method that just moves the target object
             // For true-size rendering, we should be moving the camera instead
             Vector3 currentPosition = b27Target.transform.position;
-            currentPosition.z = distanceYards + 4f;  // Add offset for old method
+            
+            // Map the yard distances to Z positions in the scene
+            // Using the original scale where distances are offset by +4
+            // This maintains compatibility with existing scene setup
+            float targetZ = distanceYards + 4f;  // Original formula restored
+            
+            currentPosition.z = targetZ;
             b27Target.transform.position = currentPosition;
-            Debug.Log($"DistanceMenuManager: Fallback - Set target position to Z={currentPosition.z}");
+            
+            // Update the base position in the target controller if it exists
+            if (targetController != null)
+            {
+                // Set the new base position so responsive mode works from the correct starting point
+                targetController.SetBasePosition(targetZ);
+            }
+            
+            Debug.Log($"DistanceMenuManager: Set target position to Z={currentPosition.z} for {distanceYards} yards");
         }
         else
         {
-            Debug.LogError("DistanceMenuManager: Cannot set distance - No QualificationDistanceManager and B27 Target is null!");
+            Debug.LogError("DistanceMenuManager: B27 Target is null - cannot set distance!");
+        }
+        
+        // Additionally update the distance manager if True-Size Rendering is in use
+        if (distanceManager != null && distanceManager.IsTrueSizeEnabled())
+        {
+            distanceManager.SetDistanceYards(distanceYards);
+            Debug.Log($"DistanceMenuManager: Also updated true-size distance to {distanceYards} yards");
         }
     }
     
