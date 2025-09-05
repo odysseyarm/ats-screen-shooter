@@ -269,7 +269,19 @@ public class QualificationDistanceManager : MonoBehaviour
         if (inputHandlers == null)
             return;
         
-        // Check if responsive distance is also using tracking
+        // Always reset our true-size specific state
+        currentTranslation = Vector3.zero;
+        targetTranslation = Vector3.zero;
+        deviceTrackingOffset = Vector3.zero;
+        
+        // Stop any ongoing smooth transitions
+        if (smoothingCoroutine != null)
+        {
+            StopCoroutine(smoothingCoroutine);
+            smoothingCoroutine = null;
+        }
+        
+        // Check if other systems are using tracking
         bool responsiveDistanceActive = false;
         QualificationTargetController targetController = FindObjectOfType<QualificationTargetController>();
         if (targetController != null)
@@ -277,28 +289,24 @@ public class QualificationDistanceManager : MonoBehaviour
             responsiveDistanceActive = targetController.IsResponsiveDistanceEnabled();
         }
         
-        // Only disable tracking if we're not actually tracking a device AND responsive distance is not active
-        // This prevents interfering with actual helmet/device tracking and responsive distance
-        if (!HasActiveDeviceTracking() && !responsiveDistanceActive)
+        bool hasActiveDevice = HasActiveDeviceTracking();
+        
+        // Only manage the tracking system if we're the sole user
+        if (!hasActiveDevice && !responsiveDistanceActive)
         {
+            // We can safely disable tracking and reset translation
             inputHandlers.IsTracking = false;
             inputHandlers.Translation = Vector3.zero;
-            currentTranslation = Vector3.zero;
-            targetTranslation = Vector3.zero;
-            
         }
-        else if (responsiveDistanceActive)
+        else if (responsiveDistanceActive && !hasActiveDevice)
         {
-            // Just reset our translation but keep tracking enabled for responsive distance
-            currentTranslation = Vector3.zero;
-            targetTranslation = Vector3.zero;
+            // Responsive distance is active but no real device
+            // Remove only our Z-axis contribution (distance offset)
+            Vector3 currentTrans = inputHandlers.Translation;
+            inputHandlers.Translation = new Vector3(currentTrans.x, currentTrans.y, 0);
         }
-        
-        if (smoothingCoroutine != null)
-        {
-            StopCoroutine(smoothingCoroutine);
-            smoothingCoroutine = null;
-        }
+        // If there's active device tracking, don't touch IsTracking or Translation
+        // as they're being managed by the device tracking system
     }
     
     /// <summary>
