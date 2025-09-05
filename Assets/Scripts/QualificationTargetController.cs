@@ -225,4 +225,15 @@ public class QualificationTargetController : MonoBehaviour
         transform.position = targetPosition;
         lastTrackedDistance = 0f;
     }
+    
+    public void SetBasePosition(float newBaseZ)
+    {
+        baseZPosition = newBaseZ;
+        targetPosition.z = baseZPosition;
+        targetPosition.x = transform.position.x;
+        targetPosition.y = transform.position.y;
+        transform.position = targetPosition;
+        lastTrackedDistance = 0f;
+        Debug.Log($"QualificationTargetController: Base position set to Z={baseZPosition}");
+    }
 }
