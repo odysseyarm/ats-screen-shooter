@@ -13,6 +13,8 @@ using ohc = Radiosity.OdysseyHubClient;
 public class ScreenGUI : MonoBehaviour
 {
     private UIDocument ui;
+    
+    public AppControls inputActions;
 
     [SerializeField]
     private InputHandlers inputHandlers;
@@ -23,15 +25,81 @@ public class ScreenGUI : MonoBehaviour
     [SerializeField]
     private OdysseyHubClient client;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private SceneSwitcher sceneSwitcher;
+    private LightingModeManager lightingModeManager;
+
+    private void Awake()
+    {
+        inputActions = new AppControls();
+    }
+    
     void Start()
     {
+        inputActions.UI.Enable();
+        
         ui = GetComponent<UIDocument>();
         ui.rootVisualElement.Query<Button>("Reset").First().clicked += inputHandlers.PerformReset;
         ui.rootVisualElement.Query<Button>("ToggleCrosshairs").First().clicked += inputHandlers.ToggleCrosshairs;
         ui.rootVisualElement.Query<Button>("ToggleZeroTarget").First().clicked += inputHandlers.ToggleZeroTarget;
+        ui.rootVisualElement.Query<Button>("SwitchScene").First().clicked += PerformSwitchScene;
+        ui.rootVisualElement.Query<Button>("ToggleDarkMode").First().clicked += PerformToggleDarkMode;
+        
+        UpdateSwitchButtonText();
+        
+        sceneSwitcher = GetComponent<SceneSwitcher>();
+        if (sceneSwitcher == null)
+        {
+            Debug.LogWarning($"Scene Switcher not attached to {gameObject.name} - will not be able to switch scenes");
+        }
+        else
+        {
+            sceneSwitcher.Initialize(inputActions);
+        }
+        
+        lightingModeManager = FindObjectOfType<LightingModeManager>();
+        if (lightingModeManager == null)
+        {
+            Debug.LogWarning("LightingModeManager not found - Dark Mode will not be available");
+        }
 
         RebuildListView();
+    }
+
+    private void PerformSwitchScene()
+    {
+        if (sceneSwitcher != null)
+        {
+            sceneSwitcher.SwitchScene();
+        }
+    }
+    
+    private void PerformToggleDarkMode()
+    {
+        Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] ScreenGUI: PerformToggleDarkMode() triggered via UI");
+        
+        if (lightingModeManager != null)
+        {
+            Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] ScreenGUI: Calling LightingModeManager.ToggleLightingMode()");
+            lightingModeManager.ToggleLightingMode();
+        }
+        else
+        {
+            Debug.LogWarning($"[{System.DateTime.Now:HH:mm:ss.fff}] ScreenGUI: LightingModeManager is null, cannot toggle dark mode");
+        }
+    }
+
+    private void UpdateSwitchButtonText()
+    {
+        var switchButton = ui.rootVisualElement.Query<Button>("SwitchScene").First();
+        string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (currentSceneName == "OutdoorRange")
+        {
+            switchButton.text = "Switch to Indoor";
+        }
+        else
+        {
+            switchButton.text = "Switch to Outdoor";
+        }
     }
 
     public void Refresh() {
@@ -53,12 +121,6 @@ public class ScreenGUI : MonoBehaviour
         if (ui.enabled) {
             Refresh();
         }
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     private void RebuildListView() {

@@ -19,7 +19,7 @@ public class InputHandlers : TrackerBase
     private ProjectionPlane projectionPlane;
 
     [SerializeField]
-    private InputActionReference reset, togglech, togglezerotarget;
+    private InputActionReference reset, togglech, togglezerotarget, toggledarkmode, debugshot;
 
     [SerializeField]
     private Canvas crosshairCanvas;
@@ -32,6 +32,9 @@ public class InputHandlers : TrackerBase
 
     private OdysseyHubClient client;
     private ScreenShooter screenShooter;
+    private LightingModeManager lightingModeManager;
+    private AppControls appControls;
+    private QualificationDistanceManager qualificationDistanceManager;
 
     [SerializeField]
     private ScreenGUI screenGUI;
@@ -43,7 +46,7 @@ public class InputHandlers : TrackerBase
 
     private float distance_offset = 1.0f; // todo this is the camera's initial local position, maybe retrieve it instead of relying on it to not be changed
 
-    public AppConfig appConfig = new AppConfig();
+    public ATSAppConfig appConfig = new ATSAppConfig();
 
     public class Player {
         public ohc.uniffi.DeviceRecord device;
@@ -62,6 +65,16 @@ public class InputHandlers : TrackerBase
 
     private void OnEnable()
     {
+        // Enable all the actions
+        reset.action.Enable();
+        togglech.action.Enable();
+        togglezerotarget.action.Enable();
+        if (debugshot != null)
+        {
+            debugshot.action.Enable();
+            debugshot.action.performed += PerformDebugShot;
+        }
+        
         reset.action.performed += PerformReset;
         togglech.action.performed += ToggleCrosshairs;
         togglezerotarget.action.performed += ToggleZeroTarget;
@@ -72,6 +85,16 @@ public class InputHandlers : TrackerBase
         reset.action.performed -= PerformReset;
         togglech.action.performed -= ToggleCrosshairs;
         togglezerotarget.action.performed -= ToggleZeroTarget;
+        if (debugshot != null)
+        {
+            debugshot.action.performed -= PerformDebugShot;
+            debugshot.action.Disable();
+        }
+        
+        // Disable all the actions
+        reset.action.Disable();
+        togglech.action.Disable();
+        togglezerotarget.action.Disable();
     }
 
     public void ToggleCrosshairs()
@@ -91,6 +114,21 @@ public class InputHandlers : TrackerBase
     private void ToggleZeroTarget(InputAction.CallbackContext obj) {
         ToggleZeroTarget();
     }
+    
+    private void ToggleDarkMode(InputAction.CallbackContext obj)
+    {
+        Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: ToggleDarkMode() triggered via input - Phase: {obj.phase}");
+        
+        if (lightingModeManager != null)
+        {
+            Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: Calling LightingModeManager.ToggleLightingMode()");
+            lightingModeManager.ToggleLightingMode();
+        }
+        else
+        {
+            Debug.LogWarning($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: LightingModeManager is null, cannot toggle dark mode");
+        }
+    }
 
     public void TrackingEventHandler(ohc.uniffi.DeviceRecord deviceR, ohc.uniffi.TrackingEvent tracking)
     {
@@ -105,11 +143,32 @@ public class InputHandlers : TrackerBase
         player.trackingHistory.Push(tracking);
 
         var device = new ohc.uniffi.Device(deviceR);
-
-        if (appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid()))
+        
+        // Calculate the device offset
+        Vector3 deviceOffset = zero_translation + unityPose.position;
+        
+        // Check if this is a helmet device that requires tracking
+        bool isHelmetDevice = appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid());
+        
+        // If QualificationDistanceManager is handling true-size mode, let it manage the translation completely
+        if (qualificationDistanceManager != null && qualificationDistanceManager.IsTrueSizeEnabled())
         {
+            // Update the distance manager with device tracking
+            // DO NOT update translation here - let QualificationDistanceManager handle it
+            qualificationDistanceManager.UpdateDeviceTracking(deviceOffset);
+            // TSR will set the combined translation itself
+        }
+        else if (isHelmetDevice)
+        {
+            // Enable tracking for helmet devices (moves camera)
             IsTracking = true;
-            translation = zero_translation + unityPose.position;
+            Translation = deviceOffset;
+        }
+        else
+        {
+            // For non-helmet devices when TSR is off, update translation for Responsive Distance
+            // but don't enable IsTracking (camera movement)
+            Translation = deviceOffset;
         }
     }
 
@@ -144,6 +203,36 @@ public class InputHandlers : TrackerBase
     private void PerformReset(InputAction.CallbackContext obj)
     {
         PerformReset();
+    }
+
+    private void PerformDebugShot(InputAction.CallbackContext obj)
+    {
+        // Get the first connected player's current aim point
+        Player activePlayer = null;
+        foreach (var (_, player) in players)
+        {
+            if (player != null && player.point != Vector2.zero)
+            {
+                activePlayer = player;
+                break;
+            }
+        }
+        
+        if (activePlayer != null)
+        {
+            // Use the gun's current aim point (normalized coordinates)
+            Vector2 screenPointNormal = activePlayer.point;
+            Vector2 screenPoint = new Vector2(screenPointNormal.x * Screen.width, Screen.height - screenPointNormal.y * Screen.height);
+            screenShooter.CreateShot(screenPoint);
+            Debug.Log($"Debug shot created at gun aim position: ({screenPoint.x}, {screenPoint.y})");
+        }
+        else
+        {
+            // Fallback to center if no gun is connected
+            Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            screenShooter.CreateShot(screenCenter);
+            Debug.Log($"No gun connected - debug shot created at screen center: ({screenCenter.x}, {screenCenter.y})");
+        }
     }
 
     // private void PerformResetZero(InputAction.CallbackContext obj)
@@ -185,13 +274,17 @@ public class InputHandlers : TrackerBase
 
         projectionPlane.SetLocalBounds(tl, tr, bl, br);
 
-        // Set the offset of the Odyssey (0,0) — camera origin — in Unity space
+        // Set the offset of the Odyssey (0,0) ï¿½ camera origin ï¿½ in Unity space
         zero_translation = f(new ohc.uniffi.Vector2f32(0f, 0f));
         zero_translation.z = distance_offset;
     }
 
     public async Task DeviceConnected(ohc.uniffi.DeviceRecord device) {
         try {
+            if (client == null || client.client == null) {
+                Debug.LogError("DeviceConnected: OdysseyHubClient is not initialized yet");
+                return;
+            }
             var shotDelayMS = await client.client.GetShotDelay(device);
             await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
                 var player = new Player();
@@ -204,7 +297,16 @@ public class InputHandlers : TrackerBase
                 player.crosshair = new GameObject("CrosshairPlayer" + index).AddComponent<Image>();
                 player.crosshair.transform.SetParent(crosshairCanvas.transform, false);
                 player.crosshair.GetComponent<Image>().sprite = Sprite.Create(crosshairTextures[i], new Rect(0, 0, crosshairTextures[i].width, crosshairTextures[i].height), new Vector2(0.5f, 0.5f), 1.0f);
-                screenGUI.Refresh();
+                
+                // Only refresh screenGUI if it's assigned
+                if (screenGUI != null)
+                {
+                    screenGUI.Refresh();
+                }
+                else
+                {
+                    Debug.LogWarning("InputHandlers: screenGUI is not assigned in the Inspector. Device connected but UI won't refresh.");
+                }
             });
         } catch (Exception e) {
             Debug.LogError("Error: " + e.Message);
@@ -213,8 +315,17 @@ public class InputHandlers : TrackerBase
 
     public async void DeviceDisconnected(ohc.uniffi.DeviceRecord deviceR) {
         await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
-            Destroy(players.Find(p => p.device == deviceR).crosshair.gameObject);
-            screenGUI.Refresh();
+            var player = players.Find(p => p.device == deviceR);
+            if (player != null && player.crosshair != null)
+            {
+                Destroy(player.crosshair.gameObject);
+            }
+            
+            // Only refresh screenGUI if it's assigned
+            if (screenGUI != null)
+            {
+                screenGUI.Refresh();
+            }
         });
         players.RemoveWhere(p => p.device == deviceR);
     }
@@ -225,11 +336,51 @@ public class InputHandlers : TrackerBase
         client = GetComponent<OdysseyHubClient>();
         screenShooter = GetComponent<ScreenShooter>();
         appConfig.Load();
+        
+        if (toggledarkmode == null || toggledarkmode.action == null || debugshot == null || debugshot.action == null)
+        {
+            if (appControls == null)
+            {
+                appControls = new AppControls();
+                appControls.Player.Enable();
+            }
+            
+            if (toggledarkmode == null || toggledarkmode.action == null)
+            {
+                appControls.Player.ToggleDarkMode.performed += ToggleDarkMode;
+            }
+            
+            if (debugshot == null || debugshot.action == null)
+            {
+                appControls.Player.DebugShot.performed += PerformDebugShot;
+            }
+        }
+        
+        lightingModeManager = FindObjectOfType<LightingModeManager>();
+        if (lightingModeManager == null)
+        {
+            Debug.LogError($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: LightingModeManager not found in scene! Please add it to the scene.");
+        }
+        
+        qualificationDistanceManager = FindObjectOfType<QualificationDistanceManager>();
+        if (qualificationDistanceManager == null)
+        {
+            Debug.LogWarning("InputHandlers: QualificationDistanceManager not found in scene - true-size rendering will not work with device tracking");
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+    }
+
+    void OnDestroy()
+    {
+        if (appControls != null)
+        {
+            appControls.Player.Disable();
+            appControls.Dispose();
+        }
     }
 
     void OnGUI() {

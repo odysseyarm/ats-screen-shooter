@@ -6,16 +6,24 @@
                 <ui:Label text="Toggle UI" />
             </ui:GroupBox>
             <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
-                <ui:Label text="[F2]" />
-                <ui:Button text="Clear bullet holes" name="Reset" />
+                <ui:Label text="[F2]" style="-unity-font-definition: resource(&apos;Fonts &amp; Materials/Epilogue-Regular&apos;);" />
+                <ui:Button text="Clear bullet holes" name="Reset" style="-unity-font-definition: resource(&apos;Fonts &amp; Materials/Epilogue-Regular&apos;); background-color: rgb(92, 92, 92); border-left-color: rgb(55, 55, 55); border-right-color: rgb(55, 55, 55); border-top-color: rgb(55, 55, 55); border-bottom-color: rgb(55, 55, 55); color: rgb(255, 255, 0);" />
             </ui:GroupBox>
             <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
                 <ui:Label text="[F3]" />
-                <ui:Button text="Toggle crosshairs" name="ToggleCrosshairs" />
+                <ui:Button text="Toggle crosshairs" name="ToggleCrosshairs" style="background-color: rgb(92, 92, 92); border-left-color: rgb(55, 55, 55); border-right-color: rgb(55, 55, 55); border-top-color: rgb(55, 55, 55); border-bottom-color: rgb(55, 55, 55); color: rgb(255, 255, 0);" />
             </ui:GroupBox>
             <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
                 <ui:Label text="[F4]" />
-                <ui:Button text="Toggle zero target" name="ToggleZeroTarget" />
+                <ui:Button text="Toggle zero target" name="ToggleZeroTarget" style="background-color: rgb(92, 92, 92); border-left-color: rgb(55, 55, 55); border-right-color: rgb(55, 55, 55); border-top-color: rgb(55, 55, 55); border-bottom-color: rgb(55, 55, 55); color: rgb(255, 255, 0);" />
+            </ui:GroupBox>
+            <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
+                <ui:Label text="[F5]" />
+                <ui:Button text="Switch to Outdoor" name="SwitchScene" style="background-color: rgb(92, 92, 92); border-left-color: rgb(55, 55, 55); border-right-color: rgb(55, 55, 55); border-top-color: rgb(55, 55, 55); border-bottom-color: rgb(55, 55, 55); color: rgb(255, 255, 0);" />
+            </ui:GroupBox>
+            <ui:GroupBox style="flex-direction: row; justify-content: flex-start; align-items: center;">
+                <ui:Label text="[F6]" />
+                <ui:Button text="Toggle Dark Mode" name="ToggleDarkMode" style="background-color: rgb(92, 92, 92); border-left-color: rgb(55, 55, 55); border-right-color: rgb(55, 55, 55); border-top-color: rgb(55, 55, 55); border-bottom-color: rgb(55, 55, 55); color: rgb(255, 255, 0);" />
             </ui:GroupBox>
             <ui:ListView name="ZeroDeviceChoices" />
         </ui:GroupBox>

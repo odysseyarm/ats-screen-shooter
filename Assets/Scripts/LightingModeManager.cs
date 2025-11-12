@@ -1,0 +1,637 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
+using Gaia;
+
+public class LightingModeManager : MonoBehaviour
+{
+    public enum LightingMode
+    {
+        Normal,
+        Dark
+    }
+    
+    // Static variable to persist across scene loads
+    private static LightingMode persistedMode = LightingMode.Normal;
+    
+    [Header("Settings")]
+    [SerializeField] private LightingMode currentMode = LightingMode.Normal;
+    [SerializeField] private float darkModeAmbientIntensity = 0.02f;
+    [SerializeField] private float normalModeAmbientIntensity = 1f;
+    [SerializeField] private Color darkModeAmbientColor = new Color(0.012f, 0.012f, 0.018f); // Near black with hint of blue
+    [SerializeField] private Color normalModeAmbientColor = Color.white;
+    [SerializeField] private float darkModeLightIntensityMultiplier = 0.025f; // Lights at 2.5% intensity in dark mode
+    
+    [Header("References")]
+    [SerializeField] private FlashlightController flashlightController;
+    
+    [Header("Gaia Integration")]
+    [SerializeField] private GaiaLightingProfile gaiaLightingProfile;
+    [Tooltip("Assign the 'Gaia Lighting System Profile' asset here to ensure it's included in builds")]
+    
+    [Header("Managers")]
+    [SerializeField] private QualificationModeManager qualificationModeManager;
+    
+    private List<Light> sceneLights = new List<Light>();
+    private Dictionary<Light, float> originalIntensities = new Dictionary<Light, float>();
+    private Color originalAmbientLight;
+    private float originalAmbientIntensity;
+    private AmbientMode originalAmbientMode;
+    
+    // Gaia components
+    private SceneProfile gaiaSceneProfile;
+    private int originalLightingProfileIndex = -1;
+    private int dayProfileIndex = -1;
+    private int nightProfileIndex = -1;
+    
+    void Awake()
+    {
+        if (flashlightController == null)
+        {
+            Debug.LogError("LightingModeManager: FlashlightController not assigned! Please assign it in the Inspector.");
+        }
+        
+        // Find QualificationModeManager early
+        if (qualificationModeManager == null)
+        {
+            qualificationModeManager = FindObjectOfType<QualificationModeManager>();
+            if (qualificationModeManager != null)
+            {
+                Debug.Log("LightingModeManager: Found QualificationModeManager in Awake");
+            }
+            else
+            {
+                Debug.LogWarning("LightingModeManager: QualificationModeManager not found in Awake - will retry in Start");
+            }
+        }
+        
+        StoreOriginalLightingSettings();
+        FindSceneLights();
+    }
+    
+    void OnDestroy()
+    {
+        // Cleanup handled by QualificationModeManager
+    }
+    
+    
+    void Start()
+    {
+        if (flashlightController != null)
+        {
+            GameObject projectionCamera = GameObject.Find("ProjectionPlaneCamera");
+            if (projectionCamera != null)
+            {
+                flashlightController.AttachToTransform(projectionCamera.transform);
+            }
+            else
+            {
+                Camera mainCam = Camera.main;
+                if (mainCam != null)
+                {
+                    flashlightController.AttachToTransform(mainCam.transform);
+                }
+            }
+        }
+        
+        CheckForGaiaSceneLighting();
+        
+        // Always start in Normal (Day) mode to ensure proper initialization
+        // This ensures all materials and lighting are properly set up
+        persistedMode = LightingMode.Normal;
+        currentMode = LightingMode.Normal;
+        
+        // Apply Normal mode settings after a short delay to ensure everything is loaded
+        StartCoroutine(InitializeWithNormalMode());
+    }
+    
+    private void StoreOriginalLightingSettings()
+    {
+        originalAmbientLight = RenderSettings.ambientLight;
+        originalAmbientIntensity = RenderSettings.ambientIntensity;
+        originalAmbientMode = RenderSettings.ambientMode;
+        normalModeAmbientColor = originalAmbientLight;
+        normalModeAmbientIntensity = originalAmbientIntensity;
+    }
+    
+    private void CheckForGaiaSceneLighting()
+    {
+        GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
+        if (gaiaGlobal != null && gaiaGlobal.SceneProfile != null)
+        {
+            gaiaSceneProfile = gaiaGlobal.SceneProfile;
+            
+            if (gaiaSceneProfile.m_lightingProfiles == null || gaiaSceneProfile.m_lightingProfiles.Count == 0)
+            {
+                Debug.LogWarning("LightingModeManager: Gaia lighting profiles are empty, attempting to load them...");
+                
+                GaiaLightingProfile lightingProfile = null;
+                
+                // First priority: Use the serialized field reference (this ensures it's included in builds)
+                if (gaiaLightingProfile != null)
+                {
+                    lightingProfile = gaiaLightingProfile;
+                    Debug.Log("LightingModeManager: Using assigned Gaia Lighting Profile from Inspector");
+                }
+                
+                // Second priority: Try to load from Resources folder if the asset is there
+                if (lightingProfile == null)
+                {
+                    lightingProfile = Resources.Load<GaiaLightingProfile>("Gaia Lighting System Profile");
+                    if (lightingProfile != null)
+                    {
+                        Debug.Log("LightingModeManager: Loaded lighting profile from Resources folder");
+                    }
+                }
+                
+                // Third priority: Try finding already loaded profiles
+                if (lightingProfile == null)
+                {
+                    var lightingProfiles = UnityEngine.Resources.FindObjectsOfTypeAll<GaiaLightingProfile>();
+                    
+                    foreach (var profile in lightingProfiles)
+                    {
+                        if (profile.name.Contains("Gaia Lighting System Profile"))
+                        {
+                            lightingProfile = profile;
+                            Debug.Log($"LightingModeManager: Found loaded lighting profile: {profile.name}");
+                            break;
+                        }
+                    }
+                    
+                    if (lightingProfile == null && lightingProfiles.Length > 0)
+                    {
+                        lightingProfile = lightingProfiles[0];
+                        Debug.LogWarning($"LightingModeManager: Using fallback lighting profile: {lightingProfile.name}");
+                    }
+                }
+                
+                #if UNITY_EDITOR
+                // Only use AssetDatabase in editor as a last resort
+                if (lightingProfile == null)
+                {
+                    lightingProfile = UnityEditor.AssetDatabase.LoadAssetAtPath<GaiaLightingProfile>("Assets/Procedural Worlds/Gaia/Lighting/Gaia Lighting System Profile.asset");
+                    if (lightingProfile != null)
+                    {
+                        Debug.Log("LightingModeManager: Loaded lighting profile from AssetDatabase (Editor only)");
+                    }
+                }
+                #endif
+                
+                if (lightingProfile != null && lightingProfile.m_lightingProfiles != null)
+                {
+                    gaiaSceneProfile.m_lightingProfiles = lightingProfile.m_lightingProfiles;
+                    gaiaSceneProfile.m_masterSkyboxMaterial = lightingProfile.m_masterSkyboxMaterial;
+                    Debug.Log($"LightingModeManager: Successfully loaded {gaiaSceneProfile.m_lightingProfiles.Count} lighting profiles");
+                }
+                else
+                {
+                    Debug.LogError("LightingModeManager: Failed to load Gaia lighting profiles! Dark mode sky switching will not work.");
+                    Debug.LogError("Please assign the 'Gaia Lighting System Profile' asset to the LightingModeManager in the Inspector!");
+                }
+            }
+            
+            originalLightingProfileIndex = gaiaSceneProfile.m_selectedLightingProfileValuesIndex;
+            
+            dayProfileIndex = -1;
+            nightProfileIndex = -1;
+            
+            for (int i = 0; i < gaiaSceneProfile.m_lightingProfiles.Count; i++)
+            {
+                var profile = gaiaSceneProfile.m_lightingProfiles[i];
+                if (profile == null) continue;
+                
+                string profileName = profile.m_typeOfLighting;
+                if (!string.IsNullOrEmpty(profileName))
+                {
+                    string profileNameLower = profileName.ToLower();
+                    if (profileNameLower.Contains("day") || profileNameLower.Contains("noon"))
+                    {
+                        dayProfileIndex = i;
+                    }
+                    else if (profileNameLower.Contains("night") || profileNameLower.Contains("midnight"))
+                    {
+                        nightProfileIndex = i;
+                    }
+                }
+            }
+        }
+    }
+    
+    private void FindSceneLights()
+    {
+        sceneLights.Clear();
+        originalIntensities.Clear();
+        
+        Light[] allLights = FindObjectsOfType<Light>();
+        foreach (Light light in allLights)
+        {
+            if (light.name.Contains("Area Light") || 
+                light.type == LightType.Spot || 
+                light.type == LightType.Point || 
+                light.type == LightType.Directional)
+            {
+                if (!light.name.Contains("Flashlight"))
+                {
+                    sceneLights.Add(light);
+                    originalIntensities[light] = light.intensity;
+                }
+            }
+        }
+        
+    }
+    
+    public void ToggleLightingMode()
+    {
+        var newMode = currentMode == LightingMode.Normal ? LightingMode.Dark : LightingMode.Normal;
+        SetLightingMode(newMode);
+    }
+    
+    public void SetLightingMode(LightingMode mode)
+    {
+        Debug.Log($"LightingModeManager: Dark Mode {(mode == LightingMode.Dark ? "ON" : "OFF")}");
+        
+        currentMode = mode;
+        persistedMode = mode; 
+        
+        switch (mode)
+        {
+            case LightingMode.Normal:
+                SetNormalLighting();
+                break;
+            case LightingMode.Dark:
+                SetDarkLighting();
+                break;
+        }
+        
+        // Update target materials through QualificationModeManager
+        UpdateTargetMaterials(mode);
+    }
+    
+    private System.Collections.IEnumerator InitializeWithNormalMode()
+    {
+        // Wait a frame to ensure everything is initialized
+        yield return new WaitForEndOfFrame();
+        
+        // Find QualificationModeManager if not already assigned
+        if (qualificationModeManager == null)
+        {
+            qualificationModeManager = FindObjectOfType<QualificationModeManager>();
+            Debug.Log($"LightingModeManager: Found QualificationModeManager: {qualificationModeManager != null}");
+        }
+        
+        // Set Normal mode to ensure all materials and lighting are properly configured
+        SetLightingMode(LightingMode.Normal);
+        Debug.Log("LightingModeManager: Initialized with Normal (Day) mode - all materials and lighting configured");
+        
+        // Force update target materials after another short delay
+        yield return new WaitForSeconds(0.1f);
+        if (qualificationModeManager != null)
+        {
+            Debug.Log("LightingModeManager: Forcing target material update to Day mode");
+            qualificationModeManager.UpdateTargetMaterials(false);
+        }
+    }
+    
+    private System.Collections.IEnumerator RestorePersistedMode()
+    {
+        yield return new WaitForEndOfFrame();
+        
+        int maxAttempts = 50;
+        int attempts = 0;
+        
+        while (attempts < maxAttempts)
+        {
+            GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
+            if (gaiaGlobal != null && gaiaGlobal.SceneProfile != null)
+            {
+                yield return new WaitForSeconds(0.5f);
+                break;
+            }
+            attempts++;
+            yield return new WaitForSeconds(0.1f);
+        }
+        
+        if (attempts >= maxAttempts)
+        {
+            Debug.LogWarning($"LightingModeManager: Gaia initialization timeout after {maxAttempts} attempts");
+        }
+        
+        CheckForGaiaSceneLighting();
+        
+        // Wait for Gaia to fully apply its default profile first
+        yield return new WaitForSeconds(0.5f);
+        SetLightingMode(persistedMode);
+        
+        if (persistedMode == LightingMode.Dark && nightProfileIndex >= 0)
+        {
+            yield return new WaitForSeconds(0.5f);
+            
+            for (int i = 0; i < 3; i++)
+            {
+                ForceGaiaProfileReload(nightProfileIndex);
+                
+                yield return new WaitForSeconds(0.2f);
+                
+                ApplySkyboxFromProfile(nightProfileIndex);
+                
+                if (RenderSettings.skybox != null)
+                {
+                    Material skybox = RenderSettings.skybox;
+                    RenderSettings.skybox = null;
+                    yield return null;
+                    RenderSettings.skybox = skybox;
+                    
+                    if (skybox.HasProperty("_Exposure"))
+                    {
+                        float currentExposure = skybox.GetFloat("_Exposure");
+                        if (currentExposure != gaiaSceneProfile.m_lightingProfiles[nightProfileIndex].m_skyboxExposure)
+                        {
+                            ApplySkyboxFromProfile(nightProfileIndex);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+                
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+    }
+    
+    private void SetNormalLighting()
+    {
+        foreach (Light light in sceneLights)
+        {
+            if (light != null && originalIntensities.ContainsKey(light))
+            {
+                light.intensity = originalIntensities[light];
+                light.enabled = true;
+            }
+        }
+        
+        RenderSettings.ambientLight = normalModeAmbientColor;
+        RenderSettings.ambientIntensity = normalModeAmbientIntensity;
+        
+        if (gaiaSceneProfile != null && dayProfileIndex >= 0)
+        {
+            int targetProfile = (originalLightingProfileIndex != nightProfileIndex) ? originalLightingProfileIndex : dayProfileIndex;
+            gaiaSceneProfile.m_selectedLightingProfileValuesIndex = targetProfile;
+            
+            GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
+            if (gaiaGlobal != null)
+            {
+                gaiaGlobal.UpdateGaiaTimeOfDay(false);
+            }
+            
+            ApplySkyboxFromProfile(targetProfile);
+        }
+        
+        if (flashlightController != null)
+        {
+            flashlightController.SetFlashlightEnabled(false);
+        }
+    }
+    
+    private void SetDarkLighting()
+    {
+        foreach (Light light in sceneLights)
+        {
+            if (light != null && originalIntensities.ContainsKey(light))
+            {
+                light.intensity = originalIntensities[light] * darkModeLightIntensityMultiplier;
+                light.enabled = true;
+            }
+        }
+        
+        RenderSettings.ambientLight = darkModeAmbientColor;
+        RenderSettings.ambientIntensity = darkModeAmbientIntensity;
+        
+        if (gaiaSceneProfile != null && nightProfileIndex >= 0)
+        {
+            GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
+            if (gaiaGlobal != null && gaiaGlobal.SceneProfile != null)
+            {
+                if (gaiaSceneProfile != gaiaGlobal.SceneProfile)
+                {
+                    CheckForGaiaSceneLighting();
+                }
+            }
+            
+            if (nightProfileIndex >= 0 && gaiaSceneProfile != null)
+            {
+                GaiaLightingProfileValues nightProfile = gaiaSceneProfile.m_lightingProfiles[nightProfileIndex];
+                
+                gaiaSceneProfile.m_selectedLightingProfileValuesIndex = nightProfileIndex;
+                
+                if (gaiaGlobal != null)
+                {
+                    gaiaGlobal.UpdateGaiaTimeOfDay(false);
+                    
+                    if (gaiaSceneProfile.m_gaiaTimeOfDay != null)
+                    {
+                        gaiaSceneProfile.m_gaiaTimeOfDay.m_todHour = 1;
+                        gaiaSceneProfile.m_gaiaTimeOfDay.m_todMinutes = 0;
+                        gaiaGlobal.UpdateGaiaTimeOfDay(false);
+                    }
+                }
+                
+                ForceGaiaProfileReload(nightProfileIndex);
+                
+                if (nightProfile != null)
+                {
+                    ApplySkyboxFromProfile(nightProfileIndex);
+                    
+                    if (RenderSettings.skybox != null)
+                    {
+                        Material skybox = RenderSettings.skybox;
+                        RenderSettings.skybox = null;
+                        RenderSettings.skybox = skybox;
+                    }
+                }
+            }
+        }
+        
+        RenderSettings.ambientLight = darkModeAmbientColor;
+        RenderSettings.ambientIntensity = darkModeAmbientIntensity;
+        RenderSettings.ambientSkyColor = darkModeAmbientColor * 1.05f; // Barely any sky brightness
+        RenderSettings.ambientEquatorColor = darkModeAmbientColor * 1.1f; // Minimal horizon glow
+        RenderSettings.ambientGroundColor = darkModeAmbientColor * 0.1f; // Almost no ground reflection;
+        
+        if (flashlightController != null)
+        {
+            string currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            bool enableFlashlight = (currentSceneName == "OutdoorRange");
+            if (enableFlashlight)
+            {
+                Debug.Log("LightingModeManager: Flashlight ON");
+            }
+            flashlightController.SetFlashlightEnabled(enableFlashlight);
+        }
+    }
+    
+    public LightingMode GetCurrentMode()
+    {
+        return currentMode;
+    }
+    
+    public FlashlightController GetFlashlightController()
+    {
+        return flashlightController;
+    }
+    
+    private void ForceGaiaProfileReload(int profileIndex)
+    {
+        if (gaiaSceneProfile == null || profileIndex < 0)
+        {
+            return;
+        }
+            
+        int tempIndex = (profileIndex == 0) ? 1 : 0;
+        if (tempIndex < gaiaSceneProfile.m_lightingProfiles.Count)
+        {
+            gaiaSceneProfile.m_selectedLightingProfileValuesIndex = tempIndex;
+            GaiaGlobal gaiaGlobal = GaiaGlobal.Instance;
+            if (gaiaGlobal != null)
+            {
+                gaiaGlobal.UpdateGaiaTimeOfDay(false);
+            }
+        }
+        
+        gaiaSceneProfile.m_selectedLightingProfileValuesIndex = profileIndex;
+        if (GaiaGlobal.Instance != null)
+        {
+            GaiaGlobal.Instance.UpdateGaiaTimeOfDay(false);
+        }
+    }
+    
+    private void ApplySkyboxFromProfile(int profileIndex)
+    {
+        if (gaiaSceneProfile == null || profileIndex < 0 || profileIndex >= gaiaSceneProfile.m_lightingProfiles.Count)
+        {
+            return;
+        }
+            
+        GaiaLightingProfileValues profile = gaiaSceneProfile.m_lightingProfiles[profileIndex];
+        if (profile == null)
+            return;
+            
+        Material skyboxMat = RenderSettings.skybox;
+        if (skyboxMat != null)
+        {
+            // DON'T create a new material with different shader - just modify the existing one
+            // This preserves the PWS/Skybox/PW_HDRI shader that Gaia uses
+            
+            // Check for PWS shader properties (Gaia's custom shader)
+            if (skyboxMat.HasProperty("_HDRITint"))
+            {
+                skyboxMat.SetColor("_HDRITint", profile.m_skyboxTint);
+            }
+            else if (skyboxMat.HasProperty("_Tint"))
+            {
+                skyboxMat.SetColor("_Tint", profile.m_skyboxTint);
+            }
+            
+            // PWS shader uses _HDRIExposure instead of _Exposure
+            if (skyboxMat.HasProperty("_HDRIExposure"))
+            {
+                skyboxMat.SetFloat("_HDRIExposure", profile.m_skyboxExposure);
+            }
+            else if (skyboxMat.HasProperty("_Exposure"))
+            {
+                skyboxMat.SetFloat("_Exposure", profile.m_skyboxExposure);
+            }
+                
+            if (skyboxMat.HasProperty("_Rotation"))
+                skyboxMat.SetFloat("_Rotation", profile.m_skyboxRotationOffset);
+                
+            // For HDRI skyboxes - PWS shader uses _MainTex
+            if (profile.m_skyboxHDRI != null)
+            {
+                if (skyboxMat.HasProperty("_MainTex"))
+                {
+                    skyboxMat.SetTexture("_MainTex", profile.m_skyboxHDRI);
+                }
+                else if (skyboxMat.HasProperty("_Tex"))
+                {
+                    skyboxMat.SetTexture("_Tex", profile.m_skyboxHDRI);
+                }
+            }
+                
+            // For procedural skyboxes
+            if (skyboxMat.HasProperty("_SunSize"))
+                skyboxMat.SetFloat("_SunSize", profile.m_sunSize);
+                
+            if (skyboxMat.HasProperty("_AtmosphereThickness"))
+            {
+                skyboxMat.SetFloat("_AtmosphereThickness", profile.m_atmosphereThickness);
+            }
+                
+            if (skyboxMat.HasProperty("_SkyTint"))
+                skyboxMat.SetColor("_SkyTint", profile.m_skyboxTint);
+                
+            if (skyboxMat.HasProperty("_GroundColor"))
+                skyboxMat.SetColor("_GroundColor", profile.m_groundColor);
+            
+            skyboxMat.SetFloat("_UpdateTrigger", Random.Range(0f, 1f));
+            
+            DynamicGI.UpdateEnvironment();
+        }
+        
+        RenderSettings.ambientMode = profile.m_ambientMode;
+        RenderSettings.ambientIntensity = profile.m_ambientIntensity;
+        RenderSettings.ambientSkyColor = profile.m_skyAmbient;
+        RenderSettings.ambientEquatorColor = profile.m_equatorAmbient;
+        RenderSettings.ambientGroundColor = profile.m_groundAmbient;
+    }
+    
+    private void UpdateTargetMaterials(LightingMode mode)
+    {
+        Debug.Log($"LightingModeManager: UpdateTargetMaterials called with mode: {mode}");
+        
+        // Update B27 target materials through QualificationModeManager
+        if (qualificationModeManager == null)
+        {
+            qualificationModeManager = FindObjectOfType<QualificationModeManager>();
+            Debug.Log($"LightingModeManager: Had to find QualificationModeManager - found: {qualificationModeManager != null}");
+        }
+        
+        if (qualificationModeManager != null)
+        {
+            bool isDarkMode = mode == LightingMode.Dark;
+            Debug.Log($"LightingModeManager: Calling QualificationModeManager.UpdateTargetMaterials with isDarkMode: {isDarkMode}");
+            qualificationModeManager.UpdateTargetMaterials(isDarkMode);
+            
+            // In builds, add a delayed second update to ensure materials are applied
+            #if !UNITY_EDITOR
+            StartCoroutine(DelayedMaterialUpdate(isDarkMode));
+            #endif
+        }
+        else
+        {
+            Debug.LogError("LightingModeManager: QualificationModeManager not found! B27 targets will not update.");
+        }
+        
+        // Also update any ReactiveTargets in the scene
+        ReactiveTarget[] reactiveTargets = FindObjectsOfType<ReactiveTarget>();
+        Debug.Log($"LightingModeManager: Found {reactiveTargets.Length} ReactiveTargets to update");
+        foreach (var target in reactiveTargets)
+        {
+            target.RefreshMaterial();
+        }
+    }
+    
+    private System.Collections.IEnumerator DelayedMaterialUpdate(bool isDarkMode)
+    {
+        yield return new WaitForSeconds(0.1f);
+        Debug.Log($"LightingModeManager: Performing delayed material update for builds (isDarkMode: {isDarkMode})");
+        if (qualificationModeManager != null)
+        {
+            qualificationModeManager.UpdateTargetMaterials(isDarkMode);
+        }
+    }
+}
