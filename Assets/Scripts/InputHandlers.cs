@@ -46,7 +46,7 @@ public class InputHandlers : TrackerBase
     public AppConfig appConfig = new AppConfig();
 
     public class Player {
-        public ohc.uniffi.DeviceRecord device;
+        public ohc.uniffi.Device device;
         public ohc.uniffi.TrackingHistory trackingHistory;
         public ushort shotDelayMS;
         public Vector2 point = Vector2.zero;
@@ -92,11 +92,11 @@ public class InputHandlers : TrackerBase
         ToggleZeroTarget();
     }
 
-    public void TrackingEventHandler(ohc.uniffi.DeviceRecord deviceR, ohc.uniffi.TrackingEvent tracking)
+    public void TrackingEventHandler(ohc.uniffi.Device device, ohc.uniffi.TrackingEvent tracking)
     {
         var unityPose = PoseUtils.ConvertOdyPoseToUnity(tracking.pose);
         var point = new Vector2(tracking.aimpoint.x, tracking.aimpoint.y);
-        Player player = players.Find(p => p.device == deviceR);
+        Player player = players.Find(p => p.device.uuid.SequenceEqual(device.uuid));
         if (player == null) {
             // DeviceConnected should handle this
             return;
@@ -104,16 +104,14 @@ public class InputHandlers : TrackerBase
         player.point = point;
         player.trackingHistory.Push(tracking);
 
-        var device = new ohc.uniffi.Device(deviceR);
-
-        if (appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid()))
+        if (appConfig.Data.helmet_uuids.Any(uuid => uuid == device.uuid))
         {
             IsTracking = true;
             translation = zero_translation + unityPose.position;
         }
     }
 
-    public void PerformShoot(ohc.uniffi.DeviceRecord device, uint timestamp)
+    public void PerformShoot(ohc.uniffi.Device device, uint timestamp)
     {
         var player = players.Find(p => p.device == device);
         if (player == null) {
@@ -126,7 +124,7 @@ public class InputHandlers : TrackerBase
         screenShooter.CreateShot(screenPoint);
     }
 
-    public void ShotDelayChangedHandler(ohc.uniffi.DeviceRecord device, ushort delay_ms)
+    public void ShotDelayChangedHandler(ohc.uniffi.Device device, ushort delay_ms)
     {
         var player = players.Find(p => p.device == device);
         if (player == null) {
@@ -190,7 +188,7 @@ public class InputHandlers : TrackerBase
         zero_translation.z = distance_offset;
     }
 
-    public async Task DeviceConnected(ohc.uniffi.DeviceRecord device) {
+    public async Task DeviceConnected(ohc.uniffi.Device device) {
         try {
             var shotDelayMS = await client.client.GetShotDelay(device);
             await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
@@ -211,12 +209,12 @@ public class InputHandlers : TrackerBase
         }
     }
 
-    public async void DeviceDisconnected(ohc.uniffi.DeviceRecord deviceR) {
+    public async void DeviceDisconnected(ohc.uniffi.Device device) {
         await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
-            Destroy(players.Find(p => p.device == deviceR).crosshair.gameObject);
+            Destroy(players.Find(p => p.device == device).crosshair.gameObject);
             screenGUI.Refresh();
         });
-        players.RemoveWhere(p => p.device == deviceR);
+        players.RemoveWhere(p => p.device == device);
     }
 
     // Start is called before the first frame update
