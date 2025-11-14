@@ -7,7 +7,7 @@ using UnityEngine;
 public class ConfigData
 {
     [NonSerialized]
-    public List<ulong> helmet_uuids = new();
+    public List<byte[]> helmet_uuids = new();
 
     // Serializable proxy for `helmet_uuids`
     [SerializeField]
@@ -18,16 +18,44 @@ public class ConfigData
         helmet_uuids.Clear();
         foreach (string hex in helmet_hex_uuids)
         {
-            helmet_uuids.Add(Convert.ToUInt64(hex, 16));
+            if (string.IsNullOrWhiteSpace(hex))
+            {
+                continue;
+            }
+
+            string sanitized = hex.Trim();
+            if (sanitized.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                sanitized = sanitized.Substring(2);
+            }
+
+            if ((sanitized.Length & 1) == 1)
+            {
+                sanitized = "0" + sanitized;
+            }
+
+            var bytes = new byte[sanitized.Length / 2];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = Convert.ToByte(sanitized.Substring(i * 2, 2), 16);
+            }
+
+            helmet_uuids.Add(bytes);
         }
     }
 
     public void ToHex()
     {
         helmet_hex_uuids.Clear();
-        foreach (var num in helmet_uuids)
+        foreach (var bytes in helmet_uuids)
         {
-            helmet_hex_uuids.Add(string.Format("0x{0:X}", num));
+            if (bytes == null)
+            {
+                continue;
+            }
+
+            string hex = BitConverter.ToString(bytes).Replace("-", string.Empty).ToUpperInvariant();
+            helmet_hex_uuids.Add($"0x{hex}");
         }
     }
 }

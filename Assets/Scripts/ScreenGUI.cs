@@ -95,7 +95,7 @@ public class ScreenGUI : MonoBehaviour
                 return;
             }
             var groupBox = e as GroupBox;
-            groupBox.Query<Label>().First().text = string.Format("0x{0:X}", new ohc.uniffi.Device(items[i].item.device).Uuid());
+            groupBox.Query<Label>().First().text = string.Format("0x{0:X}", items[i].item.device.uuid);
             groupBox.Query<Button>().First().clicked += () => {
                 client.client.Zero(items[i].item.device, new ohc.uniffi.Vector3f32(0, -0.0635f, 0), new ohc.uniffi.Vector2f32(0.5f, 0.5f));
             };

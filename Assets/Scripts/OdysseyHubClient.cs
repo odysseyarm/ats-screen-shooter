@@ -17,6 +17,8 @@ public class OdysseyHubClient : MonoBehaviour
 
     public Radiosity.OdysseyHubClient.Client client = new();
 
+    private readonly System.Collections.Generic.Dictionary<string, Channel<(ushort?, ohc.uniffi.ClientException?)>> shotDelayChannels = new();
+
     private bool _isConnected = false;
 
     private async void Start() {
@@ -45,6 +47,7 @@ public class OdysseyHubClient : MonoBehaviour
             var devices = await client.GetDeviceList();
             foreach (var device in devices) {
                 await inputHandlers.DeviceConnected(device);
+                StartShotDelaySubscription(device);
             }
             screenGUI.Refresh();
         }
@@ -72,20 +75,18 @@ public class OdysseyHubClient : MonoBehaviour
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ConnectEvent _:
                                     _ = Task.Run(async () => { await inputHandlers.DeviceConnected(deviceEvent.v1.device); });
+                                    StartShotDelaySubscription(deviceEvent.v1.device);
                                     break;
                                 case ohc.uniffi.DeviceEventKind.DisconnectEvent _:
                                     inputHandlers.DeviceDisconnected(deviceEvent.v1.device);
+                                    StopShotDelaySubscription(deviceEvent.v1.device);
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ZeroResult zeroResult:
                                     if (zeroResult.v1) {
                                         Debug.Log("Zero successful");
                                     } else {
-                                        Debug.Log($"Zero failed. Try again");
+                                        Debug.Log("Zero failed. Try again");
                                     }
-                                    break;
-                                case ohc.uniffi.DeviceEventKind.ShotDelayChanged shotDelayChanged:
-                                    var delay_ms = shotDelayChanged.v1;
-                                    inputHandlers.ShotDelayChangedHandler(deviceEvent.v1.device, delay_ms);
                                     break;
                                 default:
                                     break;
@@ -103,5 +104,48 @@ public class OdysseyHubClient : MonoBehaviour
 
     private void OnDestroy() {
         cancellationTokenSource.Cancel();
+        foreach (var channel in shotDelayChannels.Values) {
+            channel.Writer.TryComplete();
+        }
+    }
+
+    private void StartShotDelaySubscription(ohc.uniffi.Device device) {
+        var key = DeviceKey(device);
+        if (shotDelayChannels.ContainsKey(key)) {
+            return;
+        }
+
+        var channel = Channel.CreateUnbounded<(ushort?, ohc.uniffi.ClientException?)>();
+        shotDelayChannels[key] = channel;
+
+        _ = client.SubscribeShotDelay(device, channel.Writer);
+
+        _ = Task.Run(async () => {
+            try {
+                await foreach (var (delay, err) in channel.Reader.ReadAllAsync(cancellationTokenSource.Token)) {
+                    if (err != null) {
+                        Debug.LogWarning($"Shot delay stream error: {err.Message}");
+                        break;
+                    }
+                    if (delay.HasValue) {
+                        inputHandlers.ShotDelayChangedHandler(device, delay.Value);
+                    }
+                }
+            } catch (OperationCanceledException) {
+                // ignore cancellation during shutdown
+            }
+        }, cancellationTokenSource.Token);
+    }
+
+    private void StopShotDelaySubscription(ohc.uniffi.Device device) {
+        var key = DeviceKey(device);
+        if (shotDelayChannels.TryGetValue(key, out var channel)) {
+            shotDelayChannels.Remove(key);
+            channel.Writer.TryComplete();
+        }
+    }
+
+    private static string DeviceKey(ohc.uniffi.Device device) {
+        return BitConverter.ToString(device.uuid);
     }
 }
