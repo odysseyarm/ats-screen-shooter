@@ -142,13 +142,11 @@ public class InputHandlers : TrackerBase
         player.point = point;
         player.trackingHistory.Push(tracking);
 
-        var device = new ohc.uniffi.Device(deviceR);
-
         // Calculate the device offset
         Vector3 deviceOffset = zero_translation + unityPose.position;
 
         // Check if this is a helmet device that requires tracking
-        bool isHelmetDevice = appConfig.Data.helmet_uuids.Any(uuid => uuid == device.Uuid());
+        bool isHelmetDevice = appConfig.Data.helmet_uuids.Any(uuid => uuid == device.uuid);
 
         // If QualificationDistanceManager is handling true-size mode, let it manage the translation completely
         if (qualificationDistanceManager != null && qualificationDistanceManager.IsTrueSizeEnabled())
@@ -162,7 +160,7 @@ public class InputHandlers : TrackerBase
         {
             // Enable tracking for helmet devices (moves camera)
             IsTracking = true;
-            translation = deviceOffset;
+            Translation = deviceOffset;
         }
         else
         {

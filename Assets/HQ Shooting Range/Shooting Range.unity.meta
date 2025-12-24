@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 9b4fd3978f842b44095ab3802a17273a
+timeCreated: 1521915394
+licenseType: Store
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 115002
+  packageName: HQ Shooting Range
+  packageVersion: 1.2
+  assetPath: Assets/HQ Shooting Range/Shooting Range.unity
+  uploadId: 370228

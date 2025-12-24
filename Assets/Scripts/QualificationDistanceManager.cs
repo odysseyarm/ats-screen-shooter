@@ -359,8 +359,7 @@ public class QualificationDistanceManager : MonoBehaviour
                 if (player != null && player.device != null)
                 {
                     // Check if this is a helmet device
-                    var device = new Radiosity.OdysseyHubClient.uniffi.Device(player.device);
-                    if (inputHandlers.appConfig.Data.helmet_uuids.Contains(device.Uuid()))
+                    if (inputHandlers.appConfig.Data.helmet_uuids.Contains(player.device.uuid))
                     {
                         return true;
                     }

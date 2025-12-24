@@ -1,10 +1,15 @@
 fileFormatVersion: 2
-guid: 6fb5a8dc5b2f85847834292744547572
-timeCreated: 1521922125
-licenseType: Store
+guid: d8c86878cbf9e314080666fc8f03154a
 NativeFormatImporter:
   externalObjects: {}
-  mainObjectFileID: 11400000
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 115002
+  packageName: HQ Shooting Range
+  packageVersion: 1.2
+  assetPath: Assets/HQ Shooting Range/Post Processing Profile.asset
+  uploadId: 370228

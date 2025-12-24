@@ -1,8 +1,17 @@
 fileFormatVersion: 2
 guid: 4c90d415445f15642b6aad9347c83457
+timeCreated: 1522011184
+licenseType: Store
 NativeFormatImporter:
   externalObjects: {}
-  mainObjectFileID: 112000000
+  mainObjectFileID: 25800000
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 115002
+  packageName: HQ Shooting Range
+  packageVersion: 1.2
+  assetPath: Assets/HQ Shooting Range/OverviewMap/LightingData.asset
+  uploadId: 370228

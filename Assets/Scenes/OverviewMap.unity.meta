@@ -7,3 +7,10 @@ DefaultImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 115002
+  packageName: HQ Shooting Range
+  packageVersion: 1.2
+  assetPath: Assets/Scenes/OverviewMap.unity
+  uploadId: 370228

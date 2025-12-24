@@ -85,3 +85,10 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 115002
+  packageName: HQ Shooting Range
+  packageVersion: 1.2
+  assetPath: Assets/HQ Shooting Range/Textures/PlainTiles_ao.tga
+  uploadId: 370228

@@ -1,3 +1,9 @@
 ﻿<Solution>
+  <Project Path="GaiaCore.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="GaiaEditor.csproj" />
+  <Project Path="ProceduralWorlds.GTS.MeshSimplifier.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Gaia.UnityURPWater.Editor.csproj" />
+  <Project Path="Gaia.UnityURPWater.Core.csproj" />
 </Solution>
