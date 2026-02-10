@@ -18,6 +18,8 @@ namespace Apt.Unity.Projection
             initialLocalPosition = projectionCamera.transform.localPosition;
         }
 
+        private bool wasTracking = false;
+
         void Update()
         {
             if (Tracker == null)
@@ -26,6 +28,13 @@ namespace Apt.Unity.Projection
             if(Tracker.IsTracking)
             {
                 projectionCamera.transform.localPosition = initialLocalPosition + Tracker.Translation;
+                wasTracking = true;
+            }
+            else if (wasTracking)
+            {
+                // When tracking is disabled, reset camera to initial position
+                projectionCamera.transform.localPosition = initialLocalPosition;
+                wasTracking = false;
             }
         }
 

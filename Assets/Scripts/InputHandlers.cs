@@ -74,7 +74,7 @@ public class InputHandlers : TrackerBase
             debugshot.action.Enable();
             debugshot.action.performed += PerformDebugShot;
         }
-        
+
         reset.action.performed += PerformReset;
         togglech.action.performed += ToggleCrosshairs;
         togglezerotarget.action.performed += ToggleZeroTarget;
@@ -90,7 +90,7 @@ public class InputHandlers : TrackerBase
             debugshot.action.performed -= PerformDebugShot;
             debugshot.action.Disable();
         }
-        
+
         // Disable all the actions
         reset.action.Disable();
         togglech.action.Disable();
@@ -114,11 +114,11 @@ public class InputHandlers : TrackerBase
     private void ToggleZeroTarget(InputAction.CallbackContext obj) {
         ToggleZeroTarget();
     }
-    
+
     private void ToggleDarkMode(InputAction.CallbackContext obj)
     {
         Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: ToggleDarkMode() triggered via input - Phase: {obj.phase}");
-        
+
         if (lightingModeManager != null)
         {
             Debug.Log($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: Calling LightingModeManager.ToggleLightingMode()");
@@ -172,7 +172,7 @@ public class InputHandlers : TrackerBase
 
     public void PerformShoot(ohc.uniffi.Device device, uint timestamp)
     {
-        var player = players.Find(p => p.device == device);
+        var player = players.Find(p => p.device.uuid.SequenceEqual(device.uuid));
         if (player == null) {
             // device was already connected before we connected our client and never performed point
             return;
@@ -185,7 +185,7 @@ public class InputHandlers : TrackerBase
 
     public void ShotDelayChangedHandler(ohc.uniffi.Device device, ushort delay_ms)
     {
-        var player = players.Find(p => p.device == device);
+        var player = players.Find(p => p.device.uuid.SequenceEqual(device.uuid));
         if (player == null) {
             // device was already connected before we connected our client and never performed point
             return;
@@ -215,7 +215,7 @@ public class InputHandlers : TrackerBase
                 break;
             }
         }
-        
+
         if (activePlayer != null)
         {
             // Use the gun's current aim point (normalized coordinates)
@@ -279,23 +279,54 @@ public class InputHandlers : TrackerBase
 
     public async Task DeviceConnected(ohc.uniffi.Device device) {
         try {
+            Debug.Log($"[DeviceConnected] START - UUID: {BitConverter.ToString(device.uuid)}");
             if (client == null || client.client == null) {
                 Debug.LogError("DeviceConnected: OdysseyHubClient is not initialized yet");
                 return;
             }
             var shotDelayMS = await client.client.GetShotDelay(device);
+            Debug.Log($"[DeviceConnected] Got shot delay: {shotDelayMS}, enqueueing to main thread");
             await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
+                Debug.Log($"[DeviceConnected] Main thread callback - players count: {players.Count}");
+                // Check if device is already connected (by UUID) to prevent duplicates
+                var existingPlayer = players.Find(p => p.device.uuid.SequenceEqual(device.uuid));
+                if (existingPlayer != null)
+                {
+                    Debug.Log($"[DeviceConnected] Device already exists, updating reference. Crosshair null? {existingPlayer.crosshair == null}");
+                    existingPlayer.device = device;
+                    existingPlayer.shotDelayMS = shotDelayMS;
+                    // Ensure crosshair is visible
+                    if (existingPlayer.crosshair != null)
+                    {
+                        existingPlayer.crosshair.enabled = true;
+                        existingPlayer.crosshair.gameObject.SetActive(true);
+                        Debug.Log($"[DeviceConnected] Existing crosshair re-enabled");
+                    }
+                    crosshairCanvas.enabled = showCrosshair;
+                    return;
+                }
+
+                Debug.Log($"[DeviceConnected] Creating new player");
                 var player = new Player();
                 player.device = device;
                 player.point = new Vector2(-1, -1);
                 player.shotDelayMS = shotDelayMS;
                 player.trackingHistory = new ohc.uniffi.TrackingHistory(100);
                 var index = players.Allocate(player);
+                Debug.Log($"[DeviceConnected] Allocated slot {index}");
                 var i = (index >= crosshairTextures.Length) ? crosshairTextures.Length - 1 : index;
                 player.crosshair = new GameObject("CrosshairPlayer" + index).AddComponent<Image>();
                 player.crosshair.transform.SetParent(crosshairCanvas.transform, false);
                 player.crosshair.GetComponent<Image>().sprite = Sprite.Create(crosshairTextures[i], new Rect(0, 0, crosshairTextures[i].width, crosshairTextures[i].height), new Vector2(0.5f, 0.5f), 1.0f);
-                
+
+                // Ensure the crosshair is visible and canvas is enabled when device connects
+                player.crosshair.enabled = true;
+                player.crosshair.gameObject.SetActive(true);
+                crosshairCanvas.enabled = showCrosshair;
+                Debug.Log($"[DeviceConnected] Crosshair created. Canvas enabled: {crosshairCanvas.enabled}, showCrosshair: {showCrosshair}");
+                Debug.Log($"[DeviceConnected] Crosshair active: {player.crosshair.gameObject.activeSelf}, enabled: {player.crosshair.enabled}");
+                Debug.Log($"[DeviceConnected] Canvas children count: {crosshairCanvas.transform.childCount}");
+
                 // Only refresh screenGUI if it's assigned
                 if (screenGUI != null)
                 {
@@ -306,14 +337,33 @@ public class InputHandlers : TrackerBase
                     Debug.LogWarning("InputHandlers: screenGUI is not assigned in the Inspector. Device connected but UI won't refresh.");
                 }
             });
+            Debug.Log($"[DeviceConnected] END");
         } catch (Exception e) {
             Debug.LogError("Error: " + e.Message);
         }
     }
 
-    public async void DeviceDisconnected(ohc.uniffi.Device device) {
-        await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
-            Destroy(players.Find(p => p.device == device).crosshair.gameObject);
+    public void DeviceDisconnected(ohc.uniffi.Device device) {
+        Debug.Log($"[DeviceDisconnected] START - UUID: {BitConverter.ToString(device.uuid)}");
+        // Use UUID comparison instead of reference equality, and handle removal synchronously
+        // to avoid race conditions with rapid disconnect/reconnect
+        UnityMainThreadDispatcher.Instance().Enqueue(() => {
+            Debug.Log($"[DeviceDisconnected] Main thread callback - players count before: {players.Count}");
+            var player = players.Find(p => p.device.uuid.SequenceEqual(device.uuid));
+            if (player != null)
+            {
+                Debug.Log($"[DeviceDisconnected] Found player, destroying crosshair");
+                if (player.crosshair != null)
+                {
+                    Destroy(player.crosshair.gameObject);
+                }
+                players.RemoveWhere(p => p.device.uuid.SequenceEqual(device.uuid));
+                Debug.Log($"[DeviceDisconnected] Player removed, count after: {players.Count}");
+            }
+            else
+            {
+                Debug.Log($"[DeviceDisconnected] Player NOT found for this device!");
+            }
 
             // Only refresh screenGUI if it's assigned
             if (screenGUI != null)
@@ -321,7 +371,6 @@ public class InputHandlers : TrackerBase
                 screenGUI.Refresh();
             }
         });
-        players.RemoveWhere(p => p.device == device);
     }
 
     // Start is called before the first frame update
@@ -330,7 +379,7 @@ public class InputHandlers : TrackerBase
         client = GetComponent<OdysseyHubClient>();
         screenShooter = GetComponent<ScreenShooter>();
         appConfig.Load();
-        
+
         if (toggledarkmode == null || toggledarkmode.action == null || debugshot == null || debugshot.action == null)
         {
             if (appControls == null)
@@ -338,24 +387,24 @@ public class InputHandlers : TrackerBase
                 appControls = new AppControls();
                 appControls.Player.Enable();
             }
-            
+
             if (toggledarkmode == null || toggledarkmode.action == null)
             {
                 appControls.Player.ToggleDarkMode.performed += ToggleDarkMode;
             }
-            
+
             if (debugshot == null || debugshot.action == null)
             {
                 appControls.Player.DebugShot.performed += PerformDebugShot;
             }
         }
-        
+
         lightingModeManager = FindObjectOfType<LightingModeManager>();
         if (lightingModeManager == null)
         {
             Debug.LogError($"[{System.DateTime.Now:HH:mm:ss.fff}] InputHandlers: LightingModeManager not found in scene! Please add it to the scene.");
         }
-        
+
         qualificationDistanceManager = FindObjectOfType<QualificationDistanceManager>();
         if (qualificationDistanceManager == null)
         {
