@@ -146,7 +146,7 @@ public class InputHandlers : TrackerBase
         Vector3 deviceOffset = zero_translation + unityPose.position;
 
         // Check if this is a helmet device that requires tracking
-        bool isHelmetDevice = appConfig.Data.helmet_uuids.Any(uuid => uuid == device.uuid);
+        bool isHelmetDevice = appConfig.Data.helmet_uuids.Any(uuid => uuid.SequenceEqual(device.uuid));
 
         // If QualificationDistanceManager is handling true-size mode, let it manage the translation completely
         if (qualificationDistanceManager != null && qualificationDistanceManager.IsTrueSizeEnabled())
@@ -272,7 +272,7 @@ public class InputHandlers : TrackerBase
 
         projectionPlane.SetLocalBounds(tl, tr, bl, br);
 
-        // Set the offset of the Odyssey (0,0) � camera origin � in Unity space
+        // Set the offset of the Odyssey (0,0)� camera origin � in Unity space
         zero_translation = f(new ohc.uniffi.Vector2f32(0f, 0f));
         zero_translation.z = distance_offset;
     }

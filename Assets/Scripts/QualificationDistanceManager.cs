@@ -205,8 +205,7 @@ public class QualificationDistanceManager : MonoBehaviour
         if (!trueSizeEnabled || !isInitialized)
             return;
             
-        deviceTrackingOffset = deviceOffset;
-        // Combine device tracking with distance offset
+        deviceTrackingOffset = new Vector3(deviceOffset.x, deviceOffset.y, -deviceOffset.z);
         Vector3 combinedTranslation = currentTranslation + deviceTrackingOffset;
         
         if (inputHandlers != null)
@@ -546,11 +545,8 @@ public class QualificationDistanceManager : MonoBehaviour
                 // The tracking has been updated by another system
                 // Extract the device movement from the new tracking position
                 // Assume the Z component should maintain our distance offset
-                deviceTrackingOffset = new Vector3(
-                    currentRealTracking.x,
-                    currentRealTracking.y,
-                    currentRealTracking.z - currentTranslation.z
-                );
+                // Z stays 0 — TSR owns Z, device only contributes X,Y
+                deviceTrackingOffset = currentRealTracking - currentTranslation;
                 
                 lastKnownRealTracking = currentRealTracking;
                 

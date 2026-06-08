@@ -32,10 +32,12 @@ namespace Apt.Unity.Projection
         Vector3 viewDir;
 
         private Camera cam;
+        private BasicMovement basicMovement;
 
         private void Awake()
         {
             cam = GetComponent<Camera>();
+            basicMovement = GetComponent<BasicMovement>();
         }
 
 
@@ -64,6 +66,15 @@ namespace Apt.Unity.Projection
 
         private void LateUpdate()
         {
+            bool isTracking = basicMovement != null && basicMovement.Tracker != null && basicMovement.Tracker.IsTracking;
+
+            if (!isTracking)
+            {
+                cam.ResetProjectionMatrix();
+                cam.ResetWorldToCameraMatrix();
+                return;
+            }
+
             if(ProjectionScreen != null)
             {
                 Vector3 pa = ProjectionScreen.BottomLeft;
@@ -89,6 +100,12 @@ namespace Apt.Unity.Projection
 
                 //distance from eye to projection screen plane
                 float d = -Vector3.Dot(va, vn);
+                if (d <= 0.001f)
+                {
+                    cam.ResetProjectionMatrix();
+                    cam.ResetWorldToCameraMatrix();
+                    return;
+                }
                 if (ClampNearPlane)
                     cam.nearClipPlane = d;
                 n = cam.nearClipPlane;

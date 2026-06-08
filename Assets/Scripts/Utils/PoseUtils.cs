@@ -25,10 +25,18 @@ public static class PoseUtils
         flipY.SetColumn(2, new Vector4(0f, 0f, 1f, 0f)); // forward
         flipY.SetColumn(3, new Vector4(0f, 0f, 0f, 1f)); // translation
 
-        // apply flip
+        // apply flip to rotation only — uniffi pose.translation is already Y-up (same as Unity),
+        // so we must not negate Y on the position. The flipY sandwich is kept for rotation
+        // to convert from right-handed to left-handed coordinate system.
         Matrix4x4 transformed = flipY * raw * flipY;
 
-        transformed.Decompose(out var t, out var r, out var s);
+        transformed.Decompose(out _, out var r, out _);
+
+        // Use raw translation directly; negating Y here would invert vertical camera movement.
+        Vector3 t = new Vector3(pose.translation.x, pose.translation.y, pose.translation.z);
+
+        // Rebuild matrix with corrected translation so matrix stays consistent with position/rotation.
+        transformed.SetColumn(3, new Vector4(t.x, t.y, t.z, 1f));
 
         return new UnityPose {
             position = t,

@@ -85,10 +85,18 @@ public class OdysseyHubClient : MonoBehaviour
                         case ohc.uniffi.Event.DeviceEvent deviceEvent:
                             switch (deviceEvent.v1.kind) {
                                 case ohc.uniffi.DeviceEventKind.TrackingEvent tracking:
-                                    inputHandlers.TrackingEventHandler(deviceEvent.v1.device, tracking.v1);
+                                    try {
+                                        inputHandlers.TrackingEventHandler(deviceEvent.v1.device, tracking.v1);
+                                    } catch (Exception handlerEx) {
+                                        Debug.LogError($"[OdysseyHubClient] TrackingEventHandler threw: {handlerEx}");
+                                    }
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ImpactEvent impact:
-                                    inputHandlers.PerformShoot(deviceEvent.v1.device, impact.v1.timestamp);
+                                    try {
+                                        inputHandlers.PerformShoot(deviceEvent.v1.device, impact.v1.timestamp);
+                                    } catch (Exception handlerEx) {
+                                        Debug.LogError($"[OdysseyHubClient] PerformShoot threw: {handlerEx}");
+                                    }
                                     break;
                                 case ohc.uniffi.DeviceEventKind.ZeroResult zeroResult:
                                     if (zeroResult.v1) {
