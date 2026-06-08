@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Linq;
 
 public class QualificationDistanceManager : MonoBehaviour
 {
@@ -325,18 +326,20 @@ public class QualificationDistanceManager : MonoBehaviour
         }
         
         bool hasActiveDevice = HasActiveDeviceTracking();
-        
-        // Only manage the tracking system if we're the sole user
-        if (!hasActiveDevice && !responsiveDistanceActive)
+
+        // TSR is being disabled — stop camera tracking unless a helmet device needs it
+        if (!hasActiveDevice)
         {
-            // We can safely disable tracking and reset translation
             inputHandlers.IsTracking = false;
+        }
+
+        if (!responsiveDistanceActive)
+        {
             inputHandlers.Translation = Vector3.zero;
         }
-        else if (responsiveDistanceActive && !hasActiveDevice)
+        else
         {
-            // Responsive distance is active but no real device
-            // Remove only our Z-axis contribution
+            // Responsive distance only needs Z — zero out TSR's Z contribution
             Vector3 currentTrans = inputHandlers.Translation;
             inputHandlers.Translation = new Vector3(currentTrans.x, currentTrans.y, 0);
         }
@@ -358,7 +361,7 @@ public class QualificationDistanceManager : MonoBehaviour
                 if (player != null && player.device != null)
                 {
                     // Check if this is a helmet device
-                    if (inputHandlers.appConfig.Data.helmet_uuids.Contains(player.device.uuid))
+                    if (inputHandlers.appConfig.Data.helmet_uuids.Any(uuid => uuid.SequenceEqual(player.device.uuid)))
                     {
                         return true;
                     }
@@ -473,17 +476,20 @@ public class QualificationDistanceManager : MonoBehaviour
         }
         
         bool finalHasActiveDevice = HasActiveDeviceTracking();
-        
-        if (!finalHasActiveDevice && !finalResponsiveDistanceActive)
+
+        // TSR is being disabled — stop camera tracking unless a helmet device needs it
+        if (!finalHasActiveDevice)
         {
-            // We can safely disable tracking and reset translation
             inputHandlers.IsTracking = false;
+        }
+
+        if (!finalResponsiveDistanceActive)
+        {
             inputHandlers.Translation = Vector3.zero;
         }
-        else if (finalResponsiveDistanceActive && !finalHasActiveDevice)
+        else
         {
-            // Responsive distance is active but no real device
-            // Remove only our Z-axis contribution
+            // Responsive distance only needs Z — zero out TSR's Z contribution
             Vector3 currentTrans = inputHandlers.Translation;
             inputHandlers.Translation = new Vector3(currentTrans.x, currentTrans.y, 0);
         }
