@@ -32,6 +32,9 @@ public class DistanceMenuManager : MonoBehaviour
     [SerializeField] private float threeYardDistance = 3f;  // Changed to actual yards
     [SerializeField] private float sevenYardDistance = 7f;
     [SerializeField] private float fifteenYardDistance = 15f;
+
+    [Tooltip("Z position the target is parked at while True-Size Rendering drives the distance")]
+    [SerializeField] private float trueSizeTargetBaseZ = 3f;
     
     private AppControls inputActions;
     private InputAction toggleTrueSizeAction;  // Custom action for T key
@@ -207,6 +210,22 @@ public class DistanceMenuManager : MonoBehaviour
     
     private void SetTargetDistance(float distanceYards)
     {
+        // With True-Size Rendering the camera simulates the distance — moving the
+        // target as well would apply the distance change twice.
+        if (distanceManager != null && distanceManager.IsTrueSizeEnabled())
+        {
+            distanceManager.SetDistanceYards(distanceYards);
+            Debug.Log($"DistanceMenuManager: True-size distance set to {distanceYards} yards (target stays parked)");
+            return;
+        }
+
+        // Record the selection even while TSR is off, so enabling TSR later
+        // starts from the distance the user actually picked
+        if (distanceManager != null)
+        {
+            distanceManager.SetDistanceYards(distanceYards);
+        }
+
         // Always move the target to the appropriate position
         if (b27Target != null)
         {
@@ -214,7 +233,15 @@ public class DistanceMenuManager : MonoBehaviour
             // Disable responsive distance when manually setting position
             if (targetController != null && targetController.IsResponsiveDistanceEnabled())
             {
-                targetController.SetResponsiveDistanceEnabled(false);
+                // Drive it through the toggle so the checkbox stays in sync
+                if (responsiveDistanceToggle != null)
+                {
+                    responsiveDistanceToggle.isOn = false;
+                }
+                else
+                {
+                    targetController.SetResponsiveDistanceEnabled(false);
+                }
                 Debug.Log("DistanceMenuManager: Disabled responsive distance for manual positioning");
             }
             
@@ -242,13 +269,6 @@ public class DistanceMenuManager : MonoBehaviour
         {
             Debug.LogError("DistanceMenuManager: B27 Target is null - cannot set distance!");
         }
-        
-        // Additionally update the distance manager if True-Size Rendering is in use
-        if (distanceManager != null && distanceManager.IsTrueSizeEnabled())
-        {
-            distanceManager.SetDistanceYards(distanceYards);
-            Debug.Log($"DistanceMenuManager: Also updated true-size distance to {distanceYards} yards");
-        }
     }
     
     private void OnResponsiveDistanceToggled(bool isOn)
@@ -268,7 +288,19 @@ public class DistanceMenuManager : MonoBehaviour
     {
         if (distanceManager != null)
         {
+            if (isOn && targetController != null)
+            {
+                // Park the target at the base position; TSR's camera translation
+                // provides the selected distance from there. Without this, a target
+                // previously moved to 7/15 yards would add onto the camera offset.
+                targetController.SetBasePosition(trueSizeTargetBaseZ);
+            }
             distanceManager.SetTrueSizeEnabled(isOn);
+            if (!isOn && targetController != null)
+            {
+                // Back to target-positioning mode: place the target at the selected distance
+                targetController.SetBasePosition(distanceManager.GetCurrentDistanceYards());
+            }
             Debug.Log($"DistanceMenuManager: True-Size Rendering set to {isOn}");
         }
         else

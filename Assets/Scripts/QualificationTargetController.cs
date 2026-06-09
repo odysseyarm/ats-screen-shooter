@@ -44,6 +44,8 @@ public class QualificationTargetController : MonoBehaviour
     
     private InputHandlers inputHandlers;
     private AppModeManager appModeManager;
+    private QualificationDistanceManager distanceManager;
+    private bool wasTrueSizeActive = false;
     private Vector3 targetPosition;
     private Vector3 currentVelocity;
     private float lastTrackedDistance = 0f;
@@ -54,6 +56,7 @@ public class QualificationTargetController : MonoBehaviour
     {
         inputHandlers = FindObjectOfType<InputHandlers>();
         appModeManager = FindObjectOfType<AppModeManager>();
+        distanceManager = FindObjectOfType<QualificationDistanceManager>();
         
         if (inputHandlers == null)
         {
@@ -81,7 +84,25 @@ public class QualificationTargetController : MonoBehaviour
         {
             return;
         }
-        
+
+        // True-Size Rendering puts the virtual shooting distance into Translation.z.
+        // Reacting to that here would read it as user movement and drag the target
+        // toward the camera, double-applying the distance. TSR owns distance while active.
+        bool trueSizeActive = distanceManager != null && distanceManager.IsTrueSizeEnabled();
+        if (trueSizeActive)
+        {
+            wasTrueSizeActive = true;
+            return;
+        }
+        if (wasTrueSizeActive)
+        {
+            // TSR just turned off — re-base so the leftover translation doesn't cause a jump
+            wasTrueSizeActive = false;
+            targetPosition = transform.position;
+            currentVelocity = Vector3.zero;
+            lastTrackedDistance = GetCurrentTrackingDistance();
+        }
+
         bool shouldLog = Time.time - lastLogTime > logInterval;
         if (shouldLog)
         {
